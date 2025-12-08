@@ -19,6 +19,11 @@ const server = new ApolloServer({ schema });
 
 const app = express();
 
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
 async function startServer() {
   await initConnections();
   await server.start();

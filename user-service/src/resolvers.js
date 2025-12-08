@@ -17,14 +17,26 @@ let redisClient;
 let rabbitChannel;
 
 const connectRedis = async () => {
-  redisClient = redis.createClient({ url: process.env.REDIS_URL });
-  await redisClient.connect();
+  try {
+    redisClient = redis.createClient({ url: process.env.REDIS_URL });
+    await redisClient.connect();
+    console.log("Redis connected successfully");
+  } catch (error) {
+    console.error("Redis connection error:", error.message);
+    redisClient = null;
+  }
 };
 
 const connectRabbitMQ = async () => {
-  const connection = await amqp.connect(process.env.RABBITMQ_URL);
-  rabbitChannel = await connection.createChannel();
-  await rabbitChannel.assertQueue("user_events");
+  try {
+    const connection = await amqp.connect(process.env.RABBITMQ_URL);
+    rabbitChannel = await connection.createChannel();
+    await rabbitChannel.assertQueue("user_events");
+    console.log("RabbitMQ connected successfully");
+  } catch (error) {
+    console.error("RabbitMQ connection error:", error.message);
+    rabbitChannel = null;
+  }
 };
 
 const generateToken = (user) => {
@@ -40,12 +52,14 @@ const resolvers = {
     pengguna: async (parent, args, context) => {
       if (!context.user) throw new Error("Unauthorized");
       const cacheKey = `pengguna:${args.id}`;
-      const cached = await redisClient.get(cacheKey);
-      if (cached) {
-        return JSON.parse(cached);
+      if (redisClient) {
+        const cached = await redisClient.get(cacheKey);
+        if (cached) {
+          return JSON.parse(cached);
+        }
       }
       const user = await User.findById(args.id).select("-password");
-      if (user) {
+      if (user && redisClient) {
         await redisClient.setEx(cacheKey, 3600, JSON.stringify(user));
       }
       return user;
@@ -54,12 +68,16 @@ const resolvers = {
       if (!context.user || context.user.role !== "admin")
         throw new Error("Unauthorized");
       const cacheKey = "daftarPengguna";
-      const cached = await redisClient.get(cacheKey);
-      if (cached) {
-        return JSON.parse(cached);
+      if (redisClient) {
+        const cached = await redisClient.get(cacheKey);
+        if (cached) {
+          return JSON.parse(cached);
+        }
       }
       const users = await User.find().select("-password");
-      await redisClient.setEx(cacheKey, 3600, JSON.stringify(users));
+      if (redisClient) {
+        await redisClient.setEx(cacheKey, 3600, JSON.stringify(users));
+      }
       return users;
     },
     saya: async (parent, args, context) => {
@@ -69,51 +87,86 @@ const resolvers = {
   },
   Mutation: {
     daftar: async (parent, args) => {
-      const hashedPassword = await bcrypt.hash(args.password, 10);
-      const user = new User({
-        nama: args.nama,
-        email: args.email,
-        password: hashedPassword,
-      });
-      await user.save();
-      const token = generateToken(user);
-      await redisClient.del("daftarPengguna");
-      if (rabbitChannel) {
-        await rabbitChannel.sendToQueue(
-          "user_events",
-          Buffer.from(
-            JSON.stringify({
-              event: "pengguna_didaftarkan",
-              data: { id: user._id, email: user.email },
-            })
-          )
-        );
+      try {
+        // Check if user already exists
+        const existingUser = await User.findOne({ email: args.email });
+        if (existingUser) {
+          throw new Error("Email already registered");
+        }
+
+        const hashedPassword = await bcrypt.hash(args.password, 10);
+        const user = new User({
+          nama: args.nama,
+          email: args.email,
+          password: hashedPassword,
+        });
+        await user.save();
+        const token = generateToken(user);
+        
+        if (redisClient) {
+          try {
+            await redisClient.del("daftarPengguna");
+          } catch (redisError) {
+            console.error("Redis error:", redisError.message);
+          }
+        }
+        
+        if (rabbitChannel) {
+          try {
+            await rabbitChannel.sendToQueue(
+              "user_events",
+              Buffer.from(
+                JSON.stringify({
+                  event: "pengguna_didaftarkan",
+                  data: { id: user._id, email: user.email },
+                })
+              )
+            );
+          } catch (rabbitError) {
+            console.error("RabbitMQ error:", rabbitError.message);
+          }
+        }
+        
+        return {
+          token,
+          user: {
+            id: user._id,
+            nama: user.nama,
+            email: user.email,
+            role: user.role,
+          },
+        };
+      } catch (error) {
+        console.error("Register error:", error);
+        throw new Error(error.message || "Registration failed");
       }
-      return {
-        token,
-        user: {
-          id: user._id,
-          nama: user.nama,
-          email: user.email,
-          role: user.role,
-        },
-      };
     },
     masuk: async (parent, args) => {
-      const user = await User.findOne({ email: args.email });
-      if (!user || !(await bcrypt.compare(args.password, user.password))) {
-        throw new Error("Invalid credentials");
+      try {
+        const user = await User.findOne({ email: args.email });
+        if (!user) {
+          throw new Error("Invalid credentials");
+        }
+        
+        const isValidPassword = await bcrypt.compare(args.password, user.password);
+        if (!isValidPassword) {
+          throw new Error("Invalid credentials");
+        }
+        
+        const token = generateToken(user);
+        return {
+          token,
+          user: {
+            id: user._id,
+            nama: user.nama,
+            email: user.email,
+            role: user.role,
+          },
+        };
+      } catch (error) {
+        console.error("Login error:", error);
+        throw new Error(error.message || "Login failed");
       }
-      const token = generateToken(user);
-      return {
-        token,
-        user: {
-          id: user._id,
-          nama: user.nama,
-          email: user.email,
-          role: user.role,
-        },
-      };
     },
     updatePengguna: async (parent, args, context) => {
       if (
@@ -125,14 +178,18 @@ const resolvers = {
         new: true,
       }).select("-password");
       if (user) {
-        await redisClient.del(`pengguna:${args.id}`);
-        await redisClient.del("daftarPengguna");
-        await rabbitChannel.sendToQueue(
-          "user_events",
-          Buffer.from(
-            JSON.stringify({ event: "pengguna_diupdate", data: user })
-          )
-        );
+        if (redisClient) {
+          await redisClient.del(`pengguna:${args.id}`);
+          await redisClient.del("daftarPengguna");
+        }
+        if (rabbitChannel) {
+          await rabbitChannel.sendToQueue(
+            "user_events",
+            Buffer.from(
+              JSON.stringify({ event: "pengguna_diupdate", data: user })
+            )
+          );
+        }
       }
       return user;
     },
@@ -141,14 +198,18 @@ const resolvers = {
         throw new Error("Unauthorized");
       const user = await User.findByIdAndDelete(args.id);
       if (user) {
-        await redisClient.del(`pengguna:${args.id}`);
-        await redisClient.del("daftarPengguna");
-        await rabbitChannel.sendToQueue(
-          "user_events",
-          Buffer.from(
-            JSON.stringify({ event: "pengguna_dihapus", data: { id: args.id } })
-          )
-        );
+        if (redisClient) {
+          await redisClient.del(`pengguna:${args.id}`);
+          await redisClient.del("daftarPengguna");
+        }
+        if (rabbitChannel) {
+          await rabbitChannel.sendToQueue(
+            "user_events",
+            Buffer.from(
+              JSON.stringify({ event: "pengguna_dihapus", data: { id: args.id } })
+            )
+          );
+        }
       }
       return !!user;
     },
@@ -156,24 +217,34 @@ const resolvers = {
 };
 
 const initConnections = async () => {
-  await mongoose.connect(process.env.MONGODB_URI);
+  try {
+    await mongoose.connect(process.env.MONGODB_URI);
+    console.log("MongoDB connected successfully");
 
-  // Seed default admin user
-  const existingUser = await User.findOne({ email: "admin@restohub.com" });
-  if (!existingUser) {
-    const hashedPassword = await bcrypt.hash("admin123", 10);
-    const defaultUser = new User({
-      nama: "Admin",
-      email: "admin@restohub.com",
-      password: hashedPassword,
-      role: "admin",
-    });
-    await defaultUser.save();
-    console.log("Default admin user created");
+    // Seed default admin user
+    try {
+      const existingUser = await User.findOne({ email: "admin@restohub.com" });
+      if (!existingUser) {
+        const hashedPassword = await bcrypt.hash("admin123", 10);
+        const defaultUser = new User({
+          nama: "Admin",
+          email: "admin@restohub.com",
+          password: hashedPassword,
+          role: "admin",
+        });
+        await defaultUser.save();
+        console.log("Default admin user created");
+      }
+    } catch (seedError) {
+      console.error("Error seeding admin user:", seedError.message);
+    }
+
+    await connectRedis();
+    await connectRabbitMQ();
+  } catch (error) {
+    console.error("Initialization error:", error);
+    throw error;
   }
-
-  await connectRedis();
-  await connectRabbitMQ();
 };
 
 module.exports = { resolvers, initConnections };

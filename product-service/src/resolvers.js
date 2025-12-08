@@ -15,38 +15,56 @@ let redisClient;
 let rabbitChannel;
 
 const connectRedis = async () => {
-  redisClient = redis.createClient({ url: process.env.REDIS_URL });
-  await redisClient.connect();
+  try {
+    redisClient = redis.createClient({ url: process.env.REDIS_URL });
+    await redisClient.connect();
+    console.log("Redis connected successfully");
+  } catch (error) {
+    console.error("Redis connection error:", error.message);
+    redisClient = null;
+  }
 };
 
 const connectRabbitMQ = async () => {
-  const connection = await amqp.connect(process.env.RABBITMQ_URL);
-  rabbitChannel = await connection.createChannel();
-  await rabbitChannel.assertQueue("product_events");
+  try {
+    const connection = await amqp.connect(process.env.RABBITMQ_URL);
+    rabbitChannel = await connection.createChannel();
+    await rabbitChannel.assertQueue("product_events");
+    console.log("RabbitMQ connected successfully");
+  } catch (error) {
+    console.error("RabbitMQ connection error:", error.message);
+    rabbitChannel = null;
+  }
 };
 
 const resolvers = {
   Query: {
     produk: async (parent, args) => {
       const cacheKey = `produk:${args.id}`;
-      const cached = await redisClient.get(cacheKey);
-      if (cached) {
-        return JSON.parse(cached);
+      if (redisClient) {
+        const cached = await redisClient.get(cacheKey);
+        if (cached) {
+          return JSON.parse(cached);
+        }
       }
       const product = await Product.findById(args.id);
-      if (product) {
+      if (product && redisClient) {
         await redisClient.setEx(cacheKey, 3600, JSON.stringify(product));
       }
       return product;
     },
     daftarProduk: async () => {
       const cacheKey = "daftarProduk";
-      const cached = await redisClient.get(cacheKey);
-      if (cached) {
-        return JSON.parse(cached);
+      if (redisClient) {
+        const cached = await redisClient.get(cacheKey);
+        if (cached) {
+          return JSON.parse(cached);
+        }
       }
       const products = await Product.find();
-      await redisClient.setEx(cacheKey, 3600, JSON.stringify(products));
+      if (redisClient) {
+        await redisClient.setEx(cacheKey, 3600, JSON.stringify(products));
+      }
       return products;
     },
   },
@@ -54,11 +72,15 @@ const resolvers = {
     buatProduk: async (parent, args) => {
       const product = new Product(args);
       await product.save();
-      await redisClient.del("daftarProduk");
-      await rabbitChannel.sendToQueue(
-        "product_events",
-        Buffer.from(JSON.stringify({ event: "produk_dibuat", data: product }))
-      );
+      if (redisClient) {
+        await redisClient.del("daftarProduk");
+      }
+      if (rabbitChannel) {
+        await rabbitChannel.sendToQueue(
+          "product_events",
+          Buffer.from(JSON.stringify({ event: "produk_dibuat", data: product }))
+        );
+      }
       return product;
     },
     updateProduk: async (parent, args) => {
@@ -66,28 +88,36 @@ const resolvers = {
         new: true,
       });
       if (product) {
-        await redisClient.del(`produk:${args.id}`);
-        await redisClient.del("daftarProduk");
-        await rabbitChannel.sendToQueue(
-          "product_events",
-          Buffer.from(
-            JSON.stringify({ event: "produk_diupdate", data: product })
-          )
-        );
+        if (redisClient) {
+          await redisClient.del(`produk:${args.id}`);
+          await redisClient.del("daftarProduk");
+        }
+        if (rabbitChannel) {
+          await rabbitChannel.sendToQueue(
+            "product_events",
+            Buffer.from(
+              JSON.stringify({ event: "produk_diupdate", data: product })
+            )
+          );
+        }
       }
       return product;
     },
     hapusProduk: async (parent, args) => {
       const product = await Product.findByIdAndDelete(args.id);
       if (product) {
-        await redisClient.del(`produk:${args.id}`);
-        await redisClient.del("daftarProduk");
-        await rabbitChannel.sendToQueue(
-          "product_events",
-          Buffer.from(
-            JSON.stringify({ event: "produk_dihapus", data: { id: args.id } })
-          )
-        );
+        if (redisClient) {
+          await redisClient.del(`produk:${args.id}`);
+          await redisClient.del("daftarProduk");
+        }
+        if (rabbitChannel) {
+          await rabbitChannel.sendToQueue(
+            "product_events",
+            Buffer.from(
+              JSON.stringify({ event: "produk_dihapus", data: { id: args.id } })
+            )
+          );
+        }
       }
       return !!product;
     },
@@ -95,9 +125,15 @@ const resolvers = {
 };
 
 const initConnections = async () => {
-  await mongoose.connect(process.env.MONGODB_URI);
-  await connectRedis();
-  await connectRabbitMQ();
+  try {
+    await mongoose.connect(process.env.MONGODB_URI);
+    console.log("MongoDB connected successfully");
+    await connectRedis();
+    await connectRabbitMQ();
+  } catch (error) {
+    console.error("Initialization error:", error);
+    throw error;
+  }
 };
 
 module.exports = { resolvers, initConnections };

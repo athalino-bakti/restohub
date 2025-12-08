@@ -34,9 +34,22 @@ const server = new ApolloServer({
     }
     return {};
   },
+  formatError: (err) => {
+    console.error("GraphQL Error:", err);
+    return {
+      message: err.message,
+      code: err.extensions?.code || "INTERNAL_SERVER_ERROR",
+    };
+  },
+  debug: true,
 });
 
 const app = express();
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
 
 async function startServer() {
   await initConnections();
