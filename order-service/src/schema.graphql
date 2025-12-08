@@ -1,0 +1,30 @@
+type Order {
+  id: ID!
+  penggunaId: ID!
+  produk: [OrderItem!]!
+  total: Float!
+  status: String!
+  tanggalDibuat: String!
+}
+
+type OrderItem {
+  produkId: ID!
+  jumlah: Int!
+  harga: Float!
+}
+
+type Query {
+  pesanan(id: ID!): Order
+  daftarPesanan(penggunaId: ID): [Order!]!
+}
+
+type Mutation {
+  buatPesanan(penggunaId: ID!, produk: [OrderItemInput!]!): Order!
+  updateStatusPesanan(id: ID!, status: String!): Order!
+  batalkanPesanan(id: ID!): Boolean!
+}
+
+input OrderItemInput {
+  produkId: ID!
+  jumlah: Int!
+}

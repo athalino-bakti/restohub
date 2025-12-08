@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: restohub-frontend-config
+  labels:
+    app: restohub-frontend
+data:
+  REACT_APP_GRAPHQL_URI: "http://restohub-api-gateway:4000/graphql"

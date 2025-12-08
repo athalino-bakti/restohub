@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: restohub-frontend
+  labels:
+    app: restohub-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: restohub-frontend
+  template:
+    metadata:
+      labels:
+        app: restohub-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: restohub-frontend:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: REACT_APP_GRAPHQL_URI
+              valueFrom:
+                configMapKeyRef:
+                  name: restohub-frontend-config
+                  key: REACT_APP_GRAPHQL_URI
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"

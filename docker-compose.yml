@@ -1,0 +1,153 @@
+version: "3.8"
+
+services:
+  mongodb:
+    image: mongo:5.0
+    container_name: restohub-mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    volumes:
+      - mongodb_data:/data/db
+
+  redis:
+    image: redis:7.0-alpine
+    container_name: restohub-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: restohub-rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: password
+
+  product-service:
+    build: ./product-service
+    container_name: restohub-product-service
+    restart: always
+    ports:
+      - "4001:4001"
+    environment:
+      - NODE_ENV=development
+      - PORT=4001
+      - MONGODB_URI=mongodb://admin:password@mongodb:27017/productdb?authSource=admin
+      - REDIS_URL=redis://redis:6379
+      - RABBITMQ_URL=amqp://admin:password@rabbitmq:5672
+    depends_on:
+      - mongodb
+      - redis
+      - rabbitmq
+
+  user-service:
+    build: ./user-service
+    container_name: restohub-user-service
+    restart: always
+    ports:
+      - "4002:4002"
+    environment:
+      - NODE_ENV=development
+      - PORT=4002
+      - MONGODB_URI=mongodb://admin:password@mongodb:27017/userdb?authSource=admin
+      - REDIS_URL=redis://redis:6379
+      - RABBITMQ_URL=amqp://admin:password@rabbitmq:5672
+    depends_on:
+      - mongodb
+      - redis
+      - rabbitmq
+
+  order-service:
+    build: ./order-service
+    container_name: restohub-order-service
+    restart: always
+    ports:
+      - "4003:4003"
+    environment:
+      - NODE_ENV=development
+      - PORT=4003
+      - MONGODB_URI=mongodb://admin:password@mongodb:27017/orderdb?authSource=admin
+      - REDIS_URL=redis://redis:6379
+      - RABBITMQ_URL=amqp://admin:password@rabbitmq:5672
+    depends_on:
+      - mongodb
+      - redis
+      - rabbitmq
+
+  payment-service:
+    build: ./payment-service
+    container_name: restohub-payment-service
+    restart: always
+    ports:
+      - "4004:4004"
+    environment:
+      - NODE_ENV=development
+      - PORT=4004
+      - MONGODB_URI=mongodb://admin:password@mongodb:27017/paymentdb?authSource=admin
+      - REDIS_URL=redis://redis:6379
+      - RABBITMQ_URL=amqp://admin:password@rabbitmq:5672
+    depends_on:
+      - mongodb
+      - redis
+      - rabbitmq
+
+  inventory-service:
+    build: ./inventory-service
+    container_name: restohub-inventory-service
+    restart: always
+    ports:
+      - "4005:4005"
+    environment:
+      - NODE_ENV=development
+      - PORT=4005
+      - MONGODB_URI=mongodb://admin:password@mongodb:27017/inventorydb?authSource=admin
+      - REDIS_URL=redis://redis:6379
+      - RABBITMQ_URL=amqp://admin:password@rabbitmq:5672
+    depends_on:
+      - mongodb
+      - redis
+      - rabbitmq
+
+  api-gateway:
+    build: ./api-gateway
+    container_name: restohub-api-gateway
+    restart: always
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=development
+      - PORT=4000
+      - PRODUCT_SERVICE_URL=http://product-service:4001/graphql
+      - USER_SERVICE_URL=http://user-service:4002/graphql
+      - ORDER_SERVICE_URL=http://order-service:4003/graphql
+      - PAYMENT_SERVICE_URL=http://payment-service:4004/graphql
+      - INVENTORY_SERVICE_URL=http://inventory-service:4005/graphql
+    depends_on:
+      - product-service
+      - user-service
+      - order-service
+      - payment-service
+      - inventory-service
+
+  frontend:
+    build: ./frontend
+    container_name: restohub-frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_GRAPHQL_URI=http://localhost:4000/graphql
+    depends_on:
+      - api-gateway
+
+volumes:
+  mongodb_data:

@@ -1,0 +1,24 @@
+type User {
+  id: ID!
+  nama: String!
+  email: String!
+  role: String!
+}
+
+type AuthPayload {
+  token: String!
+  user: User!
+}
+
+type Query {
+  pengguna(id: ID!): User
+  daftarPengguna: [User!]!
+  saya: User
+}
+
+type Mutation {
+  daftar(nama: String!, email: String!, password: String!): AuthPayload!
+  masuk(email: String!, password: String!): AuthPayload!
+  updatePengguna(id: ID!, nama: String, email: String): User!
+  hapusPengguna(id: ID!): Boolean!
+}
