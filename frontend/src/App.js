@@ -14,9 +14,16 @@ import { AuthProvider } from "./context/AuthContext";
 function App() {
   return (
     <AuthProvider>
-      <Box sx={{ flexGrow: 1, minHeight: "100vh", backgroundColor: "#f5f5f5" }}>
+      <Box
+        sx={{
+          flexGrow: 1,
+          minHeight: "100vh",
+          backgroundColor: "background.default",
+          backgroundImage: "linear-gradient(to bottom, #f8fafc 0%, #ffffff 100%)",
+        }}
+      >
         <Header />
-        <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+        <Container maxWidth="xl" sx={{ py: 4 }}>
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/login" element={<Login />} />
