@@ -78,15 +78,17 @@ const resolvers = {
       await user.save();
       const token = generateToken(user);
       await redisClient.del("daftarPengguna");
-      await rabbitChannel.sendToQueue(
-        "user_events",
-        Buffer.from(
-          JSON.stringify({
-            event: "pengguna_didaftarkan",
-            data: { id: user._id, email: user.email },
-          })
-        )
-      );
+      if (rabbitChannel) {
+        await rabbitChannel.sendToQueue(
+          "user_events",
+          Buffer.from(
+            JSON.stringify({
+              event: "pengguna_didaftarkan",
+              data: { id: user._id, email: user.email },
+            })
+          )
+        );
+      }
       return {
         token,
         user: {
@@ -155,6 +157,21 @@ const resolvers = {
 
 const initConnections = async () => {
   await mongoose.connect(process.env.MONGODB_URI);
+
+  // Seed default admin user
+  const existingUser = await User.findOne({ email: "admin@restohub.com" });
+  if (!existingUser) {
+    const hashedPassword = await bcrypt.hash("admin123", 10);
+    const defaultUser = new User({
+      nama: "Admin",
+      email: "admin@restohub.com",
+      password: hashedPassword,
+      role: "admin",
+    });
+    await defaultUser.save();
+    console.log("Default admin user created");
+  }
+
   await connectRedis();
   await connectRabbitMQ();
 };

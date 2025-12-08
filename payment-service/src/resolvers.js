@@ -52,6 +52,10 @@ const resolvers = {
       await redisClient.setEx(cacheKey, 3600, JSON.stringify(payments));
       return payments;
     },
+    pembayaranPesanan: async (parent, args) => {
+      const payments = await Payment.find({ pesananId: args.pesananId });
+      return payments;
+    },
   },
   Mutation: {
     prosesPembayaran: async (parent, args) => {
@@ -69,8 +73,7 @@ const resolvers = {
         status: "processing",
       });
       await payment.save();
-      await redisClient.del(`daftarPembayaran:${args.pesananId}`);
-      await redisClient.del("daftarPembayaran:all");
+      await redisClient.del("daftarPembayaran");
       await rabbitChannel.sendToQueue(
         "payment_events",
         Buffer.from(

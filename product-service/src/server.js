@@ -2,14 +2,16 @@ require("dotenv").config();
 const express = require("express");
 const { ApolloServer } = require("apollo-server-express");
 const { buildSubgraphSchema } = require("@apollo/subgraph");
+const { gql } = require("apollo-server-express");
 const fs = require("fs");
 const path = require("path");
 const { resolvers, initConnections } = require("./resolvers");
 
-const typeDefs = fs.readFileSync(
+const typeDefsString = fs.readFileSync(
   path.join(__dirname, "schema.graphql"),
   "utf8"
 );
+const typeDefs = gql(typeDefsString);
 
 const schema = buildSubgraphSchema([{ typeDefs, resolvers }]);
 
