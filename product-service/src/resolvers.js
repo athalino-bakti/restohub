@@ -128,10 +128,28 @@ const initConnections = async () => {
   try {
     await mongoose.connect(process.env.MONGODB_URI);
     console.log("MongoDB connected successfully");
-    await connectRedis();
-    await connectRabbitMQ();
+
+    // Connect to Redis (optional)
+    try {
+      await connectRedis();
+    } catch (error) {
+      console.warn(
+        "Redis connection failed, continuing without Redis:",
+        error.message
+      );
+    }
+
+    // Connect to RabbitMQ (optional)
+    try {
+      await connectRabbitMQ();
+    } catch (error) {
+      console.warn(
+        "RabbitMQ connection failed, continuing without RabbitMQ:",
+        error.message
+      );
+    }
   } catch (error) {
-    console.error("Initialization error:", error);
+    console.error("MongoDB initialization error:", error);
     throw error;
   }
 };

@@ -12,6 +12,12 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: password
     volumes:
       - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   redis:
     image: redis:7.0-alpine
@@ -20,6 +26,12 @@ services:
     ports:
       - "6379:6379"
     command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   rabbitmq:
     image: rabbitmq:3-management-alpine
@@ -31,6 +43,12 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: admin
       RABBITMQ_DEFAULT_PASS: password
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   product-service:
     build: ./product-service
@@ -45,11 +63,16 @@ services:
       - REDIS_URL=redis://redis:6379
       - RABBITMQ_URL=amqp://admin:password@rabbitmq:5672
     depends_on:
-      - mongodb
-      - redis
-      - rabbitmq
+      mongodb:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4001/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://localhost:4001/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -68,11 +91,16 @@ services:
       - REDIS_URL=redis://redis:6379
       - RABBITMQ_URL=amqp://admin:password@rabbitmq:5672
     depends_on:
-      - mongodb
-      - redis
-      - rabbitmq
+      mongodb:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4002/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://localhost:4002/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -91,11 +119,20 @@ services:
       - REDIS_URL=redis://redis:6379
       - RABBITMQ_URL=amqp://admin:password@rabbitmq:5672
     depends_on:
-      - mongodb
-      - redis
-      - rabbitmq
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4003/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://localhost:4003/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -114,11 +151,20 @@ services:
       - REDIS_URL=redis://redis:6379
       - RABBITMQ_URL=amqp://admin:password@rabbitmq:5672
     depends_on:
-      - mongodb
-      - redis
-      - rabbitmq
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4004/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://localhost:4004/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -137,11 +183,20 @@ services:
       - REDIS_URL=redis://redis:6379
       - RABBITMQ_URL=amqp://admin:password@rabbitmq:5672
     depends_on:
-      - mongodb
-      - redis
-      - rabbitmq
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4005/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://localhost:4005/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -156,6 +211,7 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=4000
+      - HOST=0.0.0.0
       - PRODUCT_SERVICE_URL=http://product-service:4001/graphql
       - USER_SERVICE_URL=http://user-service:4002/graphql
       - ORDER_SERVICE_URL=http://order-service:4003/graphql
@@ -181,6 +237,9 @@ services:
       - "3000:3000"
     environment:
       - REACT_APP_GRAPHQL_URI=http://localhost:4000/graphql
+      - HOST=0.0.0.0
+      - WDS_SOCKET_HOST=localhost
+      - WDS_SOCKET_PORT=3000
     depends_on:
       - api-gateway
 
