@@ -5,6 +5,7 @@ const { buildSubgraphSchema } = require("@apollo/subgraph");
 const { gql } = require("apollo-server-express");
 const fs = require("fs");
 const path = require("path");
+const jwt = require("jsonwebtoken");
 const { resolvers, initConnections } = require("./resolvers");
 
 const typeDefsString = fs.readFileSync(
@@ -20,8 +21,8 @@ const server = new ApolloServer({ schema });
 const app = express();
 
 // Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok' });
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
 });
 
 async function startServer() {
@@ -30,9 +31,10 @@ async function startServer() {
   server.applyMiddleware({ app });
 
   const PORT = process.env.PORT || 4003;
-  app.listen(PORT, () => {
+  const HOST = process.env.HOST || "localhost";
+  app.listen(PORT, HOST, () => {
     console.log(
-      `Order service running at http://localhost:${PORT}${server.graphqlPath}`
+      `Order service running at http://${HOST}:${PORT}${server.graphqlPath}`
     );
   });
 }

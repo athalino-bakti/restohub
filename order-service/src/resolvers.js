@@ -126,33 +126,32 @@ const initConnections = async () => {
   try {
     await mongoose.connect(process.env.MONGODB_URI);
     console.log("MongoDB connected successfully");
-
-    // Connect to Redis (optional)
-    try {
-      await connectRedis();
-      console.log("Redis connected successfully");
-    } catch (error) {
-      console.warn(
-        "Redis connection failed, continuing without Redis:",
-        error.message
-      );
-      redisClient = null;
-    }
-
-    // Connect to RabbitMQ (optional)
-    try {
-      await connectRabbitMQ();
-      console.log("RabbitMQ connected successfully");
-    } catch (error) {
-      console.warn(
-        "RabbitMQ connection failed, continuing without RabbitMQ:",
-        error.message
-      );
-      rabbitChannel = null;
-    }
   } catch (error) {
-    console.error("MongoDB initialization error:", error);
-    throw error;
+    console.error("MongoDB initialization error, continuing without MongoDB:", error.message);
+  }
+
+  // Connect to Redis (optional)
+  try {
+    await connectRedis();
+    console.log("Redis connected successfully");
+  } catch (error) {
+    console.warn(
+      "Redis connection failed, continuing without Redis:",
+      error.message
+    );
+    redisClient = null;
+  }
+
+  // Connect to RabbitMQ (optional)
+  try {
+    await connectRabbitMQ();
+    console.log("RabbitMQ connected successfully");
+  } catch (error) {
+    console.warn(
+      "RabbitMQ connection failed, continuing without RabbitMQ:",
+      error.message
+    );
+    rabbitChannel = null;
   }
 };
 

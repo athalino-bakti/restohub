@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   mongodb:
     image: mongo:5.0
@@ -13,7 +11,19 @@ services:
     volumes:
       - mongodb_data:/data/db
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test:
+        [
+          "CMD",
+          "mongosh",
+          "--username",
+          "admin",
+          "--password",
+          "password",
+          "--authenticationDatabase",
+          "admin",
+          "--eval",
+          "db.adminCommand('ping')",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -115,6 +125,7 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=4003
+      - HOST=0.0.0.0
       - MONGODB_URI=mongodb://admin:password@mongodb:27017/orderdb?authSource=admin
       - REDIS_URL=redis://redis:6379
       - RABBITMQ_URL=amqp://admin:password@rabbitmq:5672
@@ -136,7 +147,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 30s
+      start_period: 60s
 
   payment-service:
     build: ./payment-service
@@ -236,7 +247,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - REACT_APP_GRAPHQL_URI=http://localhost:4000/graphql
+      - REACT_APP_GRAPHQL_URI=http://api-gateway:4000/graphql
       - HOST=0.0.0.0
       - WDS_SOCKET_HOST=localhost
       - WDS_SOCKET_PORT=3000

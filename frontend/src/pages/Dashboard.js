@@ -1,5 +1,12 @@
-import React, { useContext } from "react";
-import { Grid, Card, CardContent, Typography, Box, Avatar } from "@mui/material";
+import React, { useContext, useEffect } from "react";
+import {
+  Grid,
+  Card,
+  CardContent,
+  Typography,
+  Box,
+  Avatar,
+} from "@mui/material";
 import {
   Restaurant,
   ShoppingCart,
@@ -14,8 +21,13 @@ const Dashboard = () => {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    if (!user) {
+      navigate("/login");
+    }
+  }, [user, navigate]);
+
   if (!user) {
-    navigate("/login");
     return null;
   }
 
@@ -64,7 +76,11 @@ const Dashboard = () => {
         >
           Welcome back, {user.nama}! 👋
         </Typography>
-        <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 400 }}>
+        <Typography
+          variant="h6"
+          color="text.secondary"
+          sx={{ fontWeight: 400 }}
+        >
           Manage your restaurant operations efficiently
         </Typography>
       </Box>
@@ -83,7 +99,8 @@ const Dashboard = () => {
                   transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                   "&:hover": {
                     transform: "translateY(-4px)",
-                    boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+                    boxShadow:
+                      "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
                     borderColor: card.color,
                   },
                 }}

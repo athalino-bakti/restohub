@@ -39,7 +39,12 @@ const Header = () => {
     handleClose();
   };
 
-  const getInitials = (name) => {
+  const getInitials = (name = "First Name") => {
+    if (name == undefined) {
+      return "FN";
+    } else {
+      name = name.trim();
+    }
     return name
       .split(" ")
       .map((n) => n[0])
@@ -97,7 +102,8 @@ const Header = () => {
               startIcon={<DashboardIcon />}
               onClick={() => navigate("/")}
               sx={{
-                color: location.pathname === "/" ? "primary.main" : "text.secondary",
+                color:
+                  location.pathname === "/" ? "primary.main" : "text.secondary",
                 fontWeight: location.pathname === "/" ? 600 : 400,
                 "&:hover": {
                   backgroundColor: "grey.50",
@@ -109,7 +115,10 @@ const Header = () => {
             <Button
               onClick={() => navigate("/products")}
               sx={{
-                color: location.pathname === "/products" ? "primary.main" : "text.secondary",
+                color:
+                  location.pathname === "/products"
+                    ? "primary.main"
+                    : "text.secondary",
                 fontWeight: location.pathname === "/products" ? 600 : 400,
                 "&:hover": {
                   backgroundColor: "grey.100",
@@ -121,7 +130,10 @@ const Header = () => {
             <Button
               onClick={() => navigate("/orders")}
               sx={{
-                color: location.pathname === "/orders" ? "primary.main" : "text.secondary",
+                color:
+                  location.pathname === "/orders"
+                    ? "primary.main"
+                    : "text.secondary",
                 fontWeight: location.pathname === "/orders" ? 600 : 400,
                 "&:hover": {
                   backgroundColor: "grey.50",
@@ -193,7 +205,8 @@ const Header = () => {
                   mt: 1.5,
                   minWidth: 200,
                   borderRadius: 2,
-                  boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+                  boxShadow:
+                    "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
                 },
               }}
             >
@@ -207,7 +220,10 @@ const Header = () => {
                 <DashboardIcon sx={{ mr: 2, fontSize: 20 }} />
                 Dashboard
               </MenuItem>
-              <MenuItem onClick={handleLogout} sx={{ py: 1.5, color: "error.main" }}>
+              <MenuItem
+                onClick={handleLogout}
+                sx={{ py: 1.5, color: "error.main" }}
+              >
                 <Logout sx={{ mr: 2, fontSize: 20 }} />
                 Logout
               </MenuItem>
@@ -235,7 +251,8 @@ const Header = () => {
               sx={{
                 background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
                 "&:hover": {
-                  background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
+                  background:
+                    "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
                 },
               }}
             >

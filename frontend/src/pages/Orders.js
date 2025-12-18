@@ -20,7 +20,7 @@ const GET_ORDERS = gql`
     daftarPesanan {
       id
       penggunaId
-      item {
+      produk {
         produkId
         jumlah
         harga
@@ -157,12 +157,8 @@ const Orders = () => {
                     </Typography>
                   </TableCell>
                   <TableCell>
-                    {order.item.map((item, index) => (
-                      <Typography
-                        key={index}
-                        variant="body2"
-                        sx={{ mb: 0.5 }}
-                      >
+                    {order.produk.map((item, index) => (
+                      <Typography key={index} variant="body2" sx={{ mb: 0.5 }}>
                         Product {item.produkId}: {item.jumlah} × Rp{" "}
                         {item.harga.toLocaleString("id-ID")}
                       </Typography>
@@ -189,11 +185,14 @@ const Orders = () => {
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2" color="text.secondary">
-                      {new Date(order.tanggalDibuat).toLocaleDateString("id-ID", {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                      })}
+                      {new Date(order.tanggalDibuat).toLocaleDateString(
+                        "id-ID",
+                        {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        }
+                      )}
                     </Typography>
                   </TableCell>
                 </TableRow>

@@ -17,12 +17,11 @@ import { Inventory as InventoryIcon } from "@mui/icons-material";
 
 const GET_INVENTORY = gql`
   query GetInventory {
-    daftarStok {
+    daftarInventori {
       id
       produkId
-      jumlah
+      stok
       lokasi
-      tanggalUpdate
     }
   }
 `;
@@ -43,9 +42,9 @@ const Inventory = () => {
       </Alert>
     );
 
-  const getStockStatus = (jumlah) => {
-    if (jumlah === 0) return { label: "Out of Stock", color: "error" };
-    if (jumlah < 10) return { label: "Low Stock", color: "warning" };
+  const getStockStatus = (stok) => {
+    if (stok === 0) return { label: "Out of Stock", color: "error" };
+    if (stok < 10) return { label: "Low Stock", color: "warning" };
     return { label: "In Stock", color: "success" };
   };
 
@@ -60,7 +59,7 @@ const Inventory = () => {
         </Typography>
       </Box>
 
-      {data.daftarStok.length === 0 ? (
+      {data.daftarInventori.length === 0 ? (
         <Box
           sx={{
             textAlign: "center",
@@ -110,7 +109,6 @@ const Inventory = () => {
                 <TableCell>Quantity</TableCell>
                 <TableCell>Location</TableCell>
                 <TableCell>Status</TableCell>
-                <TableCell>Last Updated</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -139,10 +137,11 @@ const Inventory = () => {
                         variant="body1"
                         sx={{
                           fontWeight: 600,
-                          color: item.jumlah === 0 ? "error.main" : "text.primary",
+                          color:
+                            item.stok === 0 ? "error.main" : "text.primary",
                         }}
                       >
-                        {item.jumlah}
+                        {item.stok}
                       </Typography>
                     </TableCell>
                     <TableCell>
@@ -159,15 +158,6 @@ const Inventory = () => {
                           fontWeight: 500,
                         }}
                       />
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" color="text.secondary">
-                        {new Date(item.tanggalUpdate).toLocaleDateString("id-ID", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </Typography>
                     </TableCell>
                   </TableRow>
                 );
