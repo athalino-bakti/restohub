@@ -1,12 +1,15 @@
 const mongoose = require("mongoose");
 const redis = require("redis");
 const amqp = require("amqplib");
+const fs = require("fs");
+const path = require("path");
 
 const ProductSchema = new mongoose.Schema({
   nama: String,
   harga: Number,
   deskripsi: String,
   kategori: String,
+  gambar: String, // Path to the uploaded image
 });
 
 const Product = mongoose.model("Product", ProductSchema);
@@ -37,6 +40,25 @@ const connectRabbitMQ = async () => {
   }
 };
 
+const saveImage = async (upload) => {
+  const { createReadStream, filename } = await upload;
+  const stream = createReadStream();
+  const uploadsDir = path.join(__dirname, "..", "uploads");
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+  const uniqueFilename = `${Date.now()}-${filename}`;
+  const filePath = path.join(uploadsDir, uniqueFilename);
+  const writeStream = fs.createWriteStream(filePath);
+  await new Promise((resolve, reject) => {
+    stream.pipe(writeStream);
+    stream.on("error", reject);
+    writeStream.on("finish", resolve);
+    writeStream.on("error", reject);
+  });
+  return `/uploads/${uniqueFilename}`;
+};
+
 const resolvers = {
   Query: {
     produk: async (parent, args) => {
@@ -48,7 +70,10 @@ const resolvers = {
         }
       }
       const product = await Product.findById(args.id);
-      if (product && redisClient) {
+      if (!product) {
+        throw new Error(`Product with id ${args.id} not found`);
+      }
+      if (redisClient) {
         await redisClient.setEx(cacheKey, 3600, JSON.stringify(product));
       }
       return product;
@@ -70,7 +95,16 @@ const resolvers = {
   },
   Mutation: {
     buatProduk: async (parent, args) => {
-      const product = new Product(args);
+      let gambarPath = null;
+      if (args.gambar) {
+        gambarPath = await saveImage(args.gambar);
+      }
+      const productData = { ...args };
+      delete productData.gambar;
+      if (gambarPath) {
+        productData.gambar = gambarPath;
+      }
+      const product = new Product(productData);
       await product.save();
       if (redisClient) {
         await redisClient.del("daftarProduk");

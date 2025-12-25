@@ -8,6 +8,8 @@ RUN npm ci
 
 COPY . .
 
+RUN apk add --no-cache curl
+
 EXPOSE 4003
 
 CMD ["npm", "start"]

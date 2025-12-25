@@ -3,6 +3,7 @@ const express = require("express");
 const { ApolloServer } = require("apollo-server-express");
 const { buildSubgraphSchema } = require("@apollo/subgraph");
 const { gql } = require("apollo-server-express");
+const { graphqlUploadExpress } = require("graphql-upload");
 const fs = require("fs");
 const path = require("path");
 const { resolvers, initConnections } = require("./resolvers");
@@ -19,9 +20,15 @@ const server = new ApolloServer({ schema });
 
 const app = express();
 
+// Enable file uploads
+app.use(graphqlUploadExpress());
+
+// Serve uploaded images
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
 // Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok' });
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
 });
 
 async function startServer() {

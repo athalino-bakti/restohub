@@ -35,18 +35,21 @@ const CREATE_PRODUCT = gql`
     $harga: Float!
     $deskripsi: String
     $kategori: String
+    $gambar: Upload
   ) {
     buatProduk(
       nama: $nama
       harga: $harga
       deskripsi: $deskripsi
       kategori: $kategori
+      gambar: $gambar
     ) {
       id
       nama
       harga
       deskripsi
       kategori
+      gambar
     }
   }
 `;
@@ -60,13 +63,20 @@ const Products = () => {
     harga: "",
     deskripsi: "",
     kategori: "",
+    gambar: null,
   });
   const [createError, setCreateError] = useState("");
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => {
     setOpen(false);
-    setFormData({ nama: "", harga: "", deskripsi: "", kategori: "" });
+    setFormData({
+      nama: "",
+      harga: "",
+      deskripsi: "",
+      kategori: "",
+      gambar: null,
+    });
     setCreateError("");
   };
 
@@ -74,11 +84,17 @@ const Products = () => {
     e.preventDefault();
     setCreateError("");
     try {
+      const variables = {
+        nama: formData.nama,
+        harga: parseFloat(formData.harga),
+        deskripsi: formData.deskripsi,
+        kategori: formData.kategori,
+      };
+      if (formData.gambar) {
+        variables.gambar = formData.gambar;
+      }
       await createProduct({
-        variables: {
-          ...formData,
-          harga: parseFloat(formData.harga),
-        },
+        variables,
       });
       refetch();
       handleClose();
@@ -111,7 +127,11 @@ const Products = () => {
         }}
       >
         <Box>
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 700, mb: 1 }}>
+          <Typography
+            variant="h4"
+            component="h1"
+            sx={{ fontWeight: 700, mb: 1 }}
+          >
             Products
           </Typography>
           <Typography variant="body1" color="text.secondary">
@@ -182,7 +202,8 @@ const Products = () => {
                   transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                   "&:hover": {
                     transform: "translateY(-4px)",
-                    boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+                    boxShadow:
+                      "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
                     borderColor: "primary.main",
                   },
                 }}
@@ -301,7 +322,9 @@ const Products = () => {
               margin="normal"
               required
               InputProps={{
-                startAdornment: <Box sx={{ mr: 1, color: "text.secondary" }}>Rp</Box>,
+                startAdornment: (
+                  <Box sx={{ mr: 1, color: "text.secondary" }}>Rp</Box>
+                ),
               }}
               sx={{ mb: 2 }}
             />
@@ -328,6 +351,22 @@ const Products = () => {
               placeholder="e.g., Food, Beverage, Dessert"
               sx={{ mb: 2 }}
             />
+            <Button variant="outlined" component="label" sx={{ mb: 2 }}>
+              Upload Image
+              <input
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={(e) =>
+                  setFormData({ ...formData, gambar: e.target.files[0] })
+                }
+              />
+            </Button>
+            {formData.gambar && (
+              <Typography variant="body2" sx={{ mb: 2 }}>
+                Selected: {formData.gambar.name}
+              </Typography>
+            )}
           </Box>
         </DialogContent>
         <DialogActions
