@@ -81,6 +81,30 @@ const resolvers = {
       );
       return order;
     },
+    updatePesanan: async (parent, args) => {
+      const updateData = {};
+      if (args.penggunaId !== undefined)
+        updateData.penggunaId = args.penggunaId;
+      if (args.produk !== undefined) updateData.produk = args.produk;
+      if (args.total !== undefined) updateData.total = args.total;
+      if (args.status !== undefined) updateData.status = args.status;
+
+      const order = await Order.findByIdAndUpdate(args.id, updateData, {
+        new: true,
+      });
+      if (order) {
+        await redisClient.del(`pesanan:${args.id}`);
+        await redisClient.del(`daftarPesanan:${order.penggunaId}`);
+        await redisClient.del("daftarPesanan:all");
+        await rabbitChannel.sendToQueue(
+          "order_events",
+          Buffer.from(
+            JSON.stringify({ event: "pesanan_diupdate", data: order })
+          )
+        );
+      }
+      return order;
+    },
     updateStatusPesanan: async (parent, args) => {
       const order = await Order.findByIdAndUpdate(
         args.id,

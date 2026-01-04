@@ -21,7 +21,7 @@ import {
   Button,
   MenuItem,
 } from "@mui/material";
-import { ShoppingCart, Edit, Delete, Save, Cancel } from "@mui/icons-material";
+import { ShoppingCart, Edit, Delete } from "@mui/icons-material";
 
 const GET_ORDERS = gql`
   query GetOrders {
@@ -41,18 +41,8 @@ const GET_ORDERS = gql`
 `;
 
 const UPDATE_ORDER = gql`
-  mutation UpdateOrder(
-    $id: ID!
-    $penggunaId: ID
-    $total: Int
-    $status: String
-  ) {
-    updatePesanan(
-      id: $id
-      penggunaId: $penggunaId
-      total: $total
-      status: $status
-    ) {
+  mutation UpdateOrder($id: ID!, $total: Float, $status: String) {
+    updatePesanan(id: $id, total: $total, status: $status) {
       id
       penggunaId
       produk {
@@ -136,13 +126,15 @@ const Orders = () => {
       await updateOrder({
         variables: {
           id: editingOrder,
-          ...editForm,
+          total: parseFloat(editForm.total),
+          status: editForm.status,
         },
       });
       setEditingOrder(null);
       refetch();
     } catch (error) {
       console.error("Error updating order:", error);
+      alert("Failed to update order: " + error.message);
     }
   };
 
@@ -317,6 +309,93 @@ const Orders = () => {
           </Table>
         </TableContainer>
       )}
+
+      {/* Edit Dialog */}
+      <Dialog
+        open={editingOrder !== null}
+        onClose={handleCancel}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Edit Order</DialogTitle>
+        <DialogContent>
+          <TextField
+            fullWidth
+            label="User ID"
+            value={editForm.penggunaId}
+            onChange={(e) =>
+              setEditForm({ ...editForm, penggunaId: e.target.value })
+            }
+            margin="normal"
+            disabled
+          />
+          <TextField
+            fullWidth
+            label="Total"
+            type="number"
+            value={editForm.total}
+            onChange={(e) =>
+              setEditForm({ ...editForm, total: parseInt(e.target.value) })
+            }
+            margin="normal"
+          />
+          <TextField
+            fullWidth
+            select
+            label="Status"
+            value={editForm.status}
+            onChange={(e) =>
+              setEditForm({ ...editForm, status: e.target.value })
+            }
+            margin="normal"
+          >
+            <MenuItem value="pending">Pending</MenuItem>
+            <MenuItem value="confirmed">Confirmed</MenuItem>
+            <MenuItem value="preparing">Preparing</MenuItem>
+            <MenuItem value="ready">Ready</MenuItem>
+            <MenuItem value="completed">Completed</MenuItem>
+            <MenuItem value="cancelled">Cancelled</MenuItem>
+          </TextField>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancel}>Cancel</Button>
+          <Button onClick={handleSave} variant="contained" color="primary">
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialog.open}
+        onClose={() => setDeleteDialog({ open: false, order: null })}
+      >
+        <DialogTitle>Delete Order</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete this order? This action cannot be
+            undone.
+          </Typography>
+          {deleteDialog.order && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="body2" color="text.secondary">
+                Order ID: #{deleteDialog.order.id.slice(-8)}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Total: Rp {deleteDialog.order.total.toLocaleString("id-ID")}
+              </Typography>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialog({ open: false, order: null })}>
+            Cancel
+          </Button>
+          <Button onClick={confirmDelete} variant="contained" color="error">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

@@ -14,8 +14,9 @@ import {
   TextField,
   Box,
   Alert,
+  IconButton,
 } from "@mui/material";
-import { Add, Restaurant } from "@mui/icons-material";
+import { Add, Restaurant, Edit, Delete } from "@mui/icons-material";
 
 const GET_PRODUCTS = gql`
   query GetProducts {
@@ -54,10 +55,50 @@ const CREATE_PRODUCT = gql`
   }
 `;
 
+const UPDATE_PRODUCT = gql`
+  mutation UpdateProduct(
+    $id: ID!
+    $nama: String
+    $harga: Float
+    $deskripsi: String
+    $kategori: String
+    $gambar: Upload
+  ) {
+    updateProduk(
+      id: $id
+      nama: $nama
+      harga: $harga
+      deskripsi: $deskripsi
+      kategori: $kategori
+      gambar: $gambar
+    ) {
+      id
+      nama
+      harga
+      deskripsi
+      kategori
+      gambar
+    }
+  }
+`;
+
+const DELETE_PRODUCT = gql`
+  mutation DeleteProduct($id: ID!) {
+    hapusProduk(id: $id)
+  }
+`;
+
 const Products = () => {
   const { loading, error, data, refetch } = useQuery(GET_PRODUCTS);
   const [createProduct] = useMutation(CREATE_PRODUCT);
+  const [updateProduct] = useMutation(UPDATE_PRODUCT);
+  const [deleteProduct] = useMutation(DELETE_PRODUCT);
   const [open, setOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [deleteDialog, setDeleteDialog] = useState({
+    open: false,
+    product: null,
+  });
   const [formData, setFormData] = useState({
     nama: "",
     harga: "",
@@ -70,6 +111,7 @@ const Products = () => {
   const handleOpen = () => setOpen(true);
   const handleClose = () => {
     setOpen(false);
+    setEditingProduct(null);
     setFormData({
       nama: "",
       harga: "",
@@ -78,6 +120,34 @@ const Products = () => {
       gambar: null,
     });
     setCreateError("");
+  };
+
+  const handleEdit = (product) => {
+    setEditingProduct(product.id);
+    setFormData({
+      nama: product.nama,
+      harga: product.harga.toString(),
+      deskripsi: product.deskripsi || "",
+      kategori: product.kategori || "",
+      gambar: null,
+    });
+    setOpen(true);
+  };
+
+  const handleDelete = (product) => {
+    setDeleteDialog({ open: true, product });
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await deleteProduct({
+        variables: { id: deleteDialog.product.id },
+      });
+      setDeleteDialog({ open: false, product: null });
+      refetch();
+    } catch (error) {
+      console.error("Error deleting product:", error);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -93,9 +163,17 @@ const Products = () => {
       if (formData.gambar) {
         variables.gambar = formData.gambar;
       }
-      await createProduct({
-        variables,
-      });
+
+      if (editingProduct) {
+        variables.id = editingProduct;
+        await updateProduct({
+          variables,
+        });
+      } else {
+        await createProduct({
+          variables,
+        });
+      }
       refetch();
       handleClose();
     } catch (error) {
@@ -253,12 +331,20 @@ const Products = () => {
                   </Box>
                 </CardContent>
                 <CardActions sx={{ p: 2, pt: 0 }}>
-                  <Button size="small" sx={{ fontWeight: 500 }}>
-                    Edit
-                  </Button>
-                  <Button size="small" color="error" sx={{ fontWeight: 500 }}>
-                    Delete
-                  </Button>
+                  <IconButton
+                    size="small"
+                    onClick={() => handleEdit(product)}
+                    color="primary"
+                  >
+                    <Edit fontSize="small" />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={() => handleDelete(product)}
+                    color="error"
+                  >
+                    <Delete fontSize="small" />
+                  </IconButton>
                 </CardActions>
               </Card>
             </Grid>
@@ -285,7 +371,7 @@ const Products = () => {
             fontWeight: 600,
           }}
         >
-          Add New Product
+          {editingProduct ? "Edit Product" : "Add New Product"}
         </DialogTitle>
         <DialogContent sx={{ pt: 3 }}>
           {createError && (
@@ -398,7 +484,31 @@ const Products = () => {
               },
             }}
           >
-            Create Product
+            {editingProduct ? "Update Product" : "Create Product"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialog.open}
+        onClose={() => setDeleteDialog({ open: false, product: null })}
+      >
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete product "
+            {deleteDialog.product?.nama}"?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setDeleteDialog({ open: false, product: null })}
+          >
+            Cancel
+          </Button>
+          <Button onClick={confirmDelete} color="error" variant="contained">
+            Delete
           </Button>
         </DialogActions>
       </Dialog>

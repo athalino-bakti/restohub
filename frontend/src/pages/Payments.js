@@ -19,8 +19,9 @@ import {
   TextField,
   Button,
   MenuItem,
+  IconButton,
 } from "@mui/material";
-import { Payment } from "@mui/icons-material";
+import { Payment, Edit, Delete } from "@mui/icons-material";
 
 const GET_PAYMENTS = gql`
   query GetPayments {
@@ -291,20 +292,20 @@ const Payments = () => {
                     </Typography>
                   </TableCell>
                   <TableCell>
-                    <Button
+                    <IconButton
                       size="small"
                       onClick={() => handleEdit(payment)}
-                      sx={{ mr: 1 }}
+                      color="primary"
                     >
-                      Edit
-                    </Button>
-                    <Button
+                      <Edit fontSize="small" />
+                    </IconButton>
+                    <IconButton
                       size="small"
-                      color="error"
                       onClick={() => handleDelete(payment)}
+                      color="error"
                     >
-                      Delete
-                    </Button>
+                      <Delete fontSize="small" />
+                    </IconButton>
                   </TableCell>
                 </TableRow>
               ))}
