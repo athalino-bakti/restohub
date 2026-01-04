@@ -2,7 +2,19 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const { ApolloServer } = require("apollo-server-express");
-const { ApolloGateway, IntrospectAndCompose } = require("@apollo/gateway");
+const {
+  ApolloGateway,
+  IntrospectAndCompose,
+  RemoteGraphQLDataSource,
+} = require("@apollo/gateway");
+
+class AuthenticatedDataSource extends RemoteGraphQLDataSource {
+  willSendRequest({ request, context }) {
+    if (context.headers?.authorization) {
+      request.http.headers.set("authorization", context.headers.authorization);
+    }
+  }
+}
 
 async function startServer() {
   const app = express();
@@ -36,6 +48,9 @@ async function startServer() {
         },
         pollIntervalInMs: 30000,
       }),
+      buildService({ url }) {
+        return new AuthenticatedDataSource({ url });
+      },
       debug: true,
       serviceHealthCheck: true,
     });
@@ -43,6 +58,11 @@ async function startServer() {
     const apolloServer = new ApolloServer({
       gateway,
       subscriptions: false,
+      context: ({ req }) => {
+        return {
+          headers: req.headers,
+        };
+      },
       formatError: (err) => {
         console.error("Gateway Error:", err);
         return {

@@ -48,6 +48,14 @@ const generateToken = (user) => {
 };
 
 const resolvers = {
+  User: {
+    id: (parent) => {
+      if (parent._id) {
+        return parent._id.toString();
+      }
+      return parent.id;
+    },
+  },
   Query: {
     pengguna: async (parent, args, context) => {
       if (!context.user) throw new Error("Unauthorized");
@@ -102,7 +110,7 @@ const resolvers = {
         });
         await user.save();
         const token = generateToken(user);
-        
+
         if (redisClient) {
           try {
             await redisClient.del("daftarPengguna");
@@ -110,7 +118,7 @@ const resolvers = {
             console.error("Redis error:", redisError.message);
           }
         }
-        
+
         if (rabbitChannel) {
           try {
             await rabbitChannel.sendToQueue(
@@ -126,7 +134,7 @@ const resolvers = {
             console.error("RabbitMQ error:", rabbitError.message);
           }
         }
-        
+
         return {
           token,
           user: {
@@ -147,12 +155,15 @@ const resolvers = {
         if (!user) {
           throw new Error("Invalid credentials");
         }
-        
-        const isValidPassword = await bcrypt.compare(args.password, user.password);
+
+        const isValidPassword = await bcrypt.compare(
+          args.password,
+          user.password
+        );
         if (!isValidPassword) {
           throw new Error("Invalid credentials");
         }
-        
+
         const token = generateToken(user);
         return {
           token,
@@ -206,7 +217,10 @@ const resolvers = {
           await rabbitChannel.sendToQueue(
             "user_events",
             Buffer.from(
-              JSON.stringify({ event: "pengguna_dihapus", data: { id: args.id } })
+              JSON.stringify({
+                event: "pengguna_dihapus",
+                data: { id: args.id },
+              })
             )
           );
         }

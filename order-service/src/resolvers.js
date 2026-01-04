@@ -35,16 +35,24 @@ const connectRabbitMQ = async () => {
 const resolvers = {
   Order: {
     id: (parent) => parent._id.toString(),
+    tanggalDibuat: (parent) => {
+      if (parent.tanggalDibuat instanceof Date) {
+        return parent.tanggalDibuat.toISOString();
+      }
+      return parent.tanggalDibuat;
+    },
   },
   Query: {
     pesanan: async (parent, args) => {
       const cacheKey = `pesanan:${args.id}`;
-      const cached = await redisClient.get(cacheKey);
-      if (cached) {
-        return JSON.parse(cached);
+      if (redisClient) {
+        const cached = await redisClient.get(cacheKey);
+        if (cached) {
+          return JSON.parse(cached);
+        }
       }
       const order = await Order.findById(args.id);
-      if (order) {
+      if (order && redisClient) {
         await redisClient.setEx(cacheKey, 3600, JSON.stringify(order));
       }
       return order;
@@ -52,12 +60,16 @@ const resolvers = {
     daftarPesanan: async (parent, args) => {
       const query = args.penggunaId ? { penggunaId: args.penggunaId } : {};
       const cacheKey = `daftarPesanan:${args.penggunaId || "all"}`;
-      const cached = await redisClient.get(cacheKey);
-      if (cached) {
-        return JSON.parse(cached);
+      if (redisClient) {
+        const cached = await redisClient.get(cacheKey);
+        if (cached) {
+          return JSON.parse(cached);
+        }
       }
       const orders = await Order.find(query);
-      await redisClient.setEx(cacheKey, 3600, JSON.stringify(orders));
+      if (redisClient) {
+        await redisClient.setEx(cacheKey, 3600, JSON.stringify(orders));
+      }
       return orders;
     },
   },
@@ -73,12 +85,16 @@ const resolvers = {
         total,
       });
       await order.save();
-      await redisClient.del(`daftarPesanan:${args.penggunaId}`);
-      await redisClient.del("daftarPesanan:all");
-      await rabbitChannel.sendToQueue(
-        "order_events",
-        Buffer.from(JSON.stringify({ event: "pesanan_dibuat", data: order }))
-      );
+      if (redisClient) {
+        await redisClient.del(`daftarPesanan:${args.penggunaId}`);
+        await redisClient.del("daftarPesanan:all");
+      }
+      if (rabbitChannel) {
+        await rabbitChannel.sendToQueue(
+          "order_events",
+          Buffer.from(JSON.stringify({ event: "pesanan_dibuat", data: order }))
+        );
+      }
       return order;
     },
     updatePesanan: async (parent, args) => {
@@ -93,15 +109,19 @@ const resolvers = {
         new: true,
       });
       if (order) {
-        await redisClient.del(`pesanan:${args.id}`);
-        await redisClient.del(`daftarPesanan:${order.penggunaId}`);
-        await redisClient.del("daftarPesanan:all");
-        await rabbitChannel.sendToQueue(
-          "order_events",
-          Buffer.from(
-            JSON.stringify({ event: "pesanan_diupdate", data: order })
-          )
-        );
+        if (redisClient) {
+          await redisClient.del(`pesanan:${args.id}`);
+          await redisClient.del(`daftarPesanan:${order.penggunaId}`);
+          await redisClient.del("daftarPesanan:all");
+        }
+        if (rabbitChannel) {
+          await rabbitChannel.sendToQueue(
+            "order_events",
+            Buffer.from(
+              JSON.stringify({ event: "pesanan_diupdate", data: order })
+            )
+          );
+        }
       }
       return order;
     },
@@ -112,15 +132,19 @@ const resolvers = {
         { new: true }
       );
       if (order) {
-        await redisClient.del(`pesanan:${args.id}`);
-        await redisClient.del(`daftarPesanan:${order.penggunaId}`);
-        await redisClient.del("daftarPesanan:all");
-        await rabbitChannel.sendToQueue(
-          "order_events",
-          Buffer.from(
-            JSON.stringify({ event: "status_pesanan_diupdate", data: order })
-          )
-        );
+        if (redisClient) {
+          await redisClient.del(`pesanan:${args.id}`);
+          await redisClient.del(`daftarPesanan:${order.penggunaId}`);
+          await redisClient.del("daftarPesanan:all");
+        }
+        if (rabbitChannel) {
+          await rabbitChannel.sendToQueue(
+            "order_events",
+            Buffer.from(
+              JSON.stringify({ event: "status_pesanan_diupdate", data: order })
+            )
+          );
+        }
       }
       return order;
     },
@@ -131,18 +155,22 @@ const resolvers = {
         { new: true }
       );
       if (order) {
-        await redisClient.del(`pesanan:${args.id}`);
-        await redisClient.del(`daftarPesanan:${order.penggunaId}`);
-        await redisClient.del("daftarPesanan:all");
-        await rabbitChannel.sendToQueue(
-          "order_events",
-          Buffer.from(
-            JSON.stringify({
-              event: "pesanan_dibatalkan",
-              data: { id: args.id },
-            })
-          )
-        );
+        if (redisClient) {
+          await redisClient.del(`pesanan:${args.id}`);
+          await redisClient.del(`daftarPesanan:${order.penggunaId}`);
+          await redisClient.del("daftarPesanan:all");
+        }
+        if (rabbitChannel) {
+          await rabbitChannel.sendToQueue(
+            "order_events",
+            Buffer.from(
+              JSON.stringify({
+                event: "pesanan_dibatalkan",
+                data: { id: args.id },
+              })
+            )
+          );
+        }
       }
       return !!order;
     },

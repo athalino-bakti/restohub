@@ -35,4 +35,5 @@ type Mutation {
 input OrderItemInput {
   produkId: ID!
   jumlah: Int!
+  harga: Float!
 }
