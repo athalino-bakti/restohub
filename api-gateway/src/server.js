@@ -3,7 +3,6 @@ const express = require("express");
 const cors = require("cors");
 const { ApolloServer } = require("apollo-server-express");
 const { ApolloGateway, IntrospectAndCompose } = require("@apollo/gateway");
-const { graphqlUploadExpress } = require("graphql-upload");
 
 async function startServer() {
   const app = express();
@@ -15,9 +14,6 @@ async function startServer() {
       credentials: true,
     })
   );
-
-  // Enable file uploads
-  app.use(graphqlUploadExpress());
 
   // Health check endpoint
   app.get("/health", (req, res) => {
