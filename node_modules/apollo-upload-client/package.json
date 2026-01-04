@@ -1,0 +1,80 @@
+{
+  "name": "apollo-upload-client",
+  "version": "19.0.0",
+  "description": "A terminating Apollo Link for Apollo Client that fetches a GraphQL multipart request if the GraphQL variables contain files (by default FileList, File, or Blob instances), or else fetches a regular GraphQL POST or GET request (depending on the config and GraphQL operation).",
+  "license": "MIT",
+  "author": {
+    "name": "Jayden Seric",
+    "email": "me@jaydenseric.com",
+    "url": "https://jaydenseric.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jaydenseric/apollo-upload-client.git"
+  },
+  "homepage": "https://github.com/jaydenseric/apollo-upload-client#readme",
+  "bugs": "https://github.com/jaydenseric/apollo-upload-client/issues",
+  "funding": "https://github.com/sponsors/jaydenseric",
+  "keywords": [
+    "graphql",
+    "multipart",
+    "request",
+    "file",
+    "upload",
+    "apollo",
+    "client",
+    "link",
+    "react",
+    "esm",
+    "mjs"
+  ],
+  "files": [
+    "formDataAppendFile.mjs",
+    "isExtractableFile.mjs",
+    "UploadHttpLink.mjs"
+  ],
+  "sideEffects": false,
+  "exports": {
+    "./formDataAppendFile.mjs": "./formDataAppendFile.mjs",
+    "./isExtractableFile.mjs": "./isExtractableFile.mjs",
+    "./package.json": "./package.json",
+    "./UploadHttpLink.mjs": "./UploadHttpLink.mjs"
+  },
+  "engines": {
+    "node": "^20.9.0 || >=22.0.0"
+  },
+  "browserslist": "Node 20.9 - 21 and Node < 21, Node >= 22, > 0.5%, not OperaMini all, not dead",
+  "peerDependencies": {
+    "@apollo/client": "^4.0.0",
+    "graphql": "14 - 16",
+    "rxjs": "^7.3.0"
+  },
+  "dependencies": {
+    "extract-files": "^13.0.0"
+  },
+  "devDependencies": {
+    "@apollo/client": "^4.0.2",
+    "@eslint/js": "^9.34.0",
+    "@types/node": "^24.3.0",
+    "coverage-node": "^8.0.0",
+    "esbuild": "^0.25.9",
+    "eslint": "^9.34.0",
+    "eslint-plugin-optimal-modules": "^3.0.0",
+    "eslint-plugin-simple-import-sort": "^12.1.1",
+    "graphql": "^16.11.0",
+    "graphql-tag": "^2.12.6",
+    "gzip-size": "^7.0.0",
+    "prettier": "^3.6.2",
+    "revertable-globals": "^4.0.0",
+    "rxjs": "^7.8.2",
+    "typescript": "^5.9.2"
+  },
+  "scripts": {
+    "prettier": "prettier -c .",
+    "eslint": "eslint",
+    "types": "tsc -p jsconfig.json",
+    "test": "coverage-node --test-reporter=spec --test *.test.mjs",
+    "check": "node --run prettier && node --run eslint && node --run types && node --run test",
+    "prepublishOnly": "node --run check"
+  }
+}

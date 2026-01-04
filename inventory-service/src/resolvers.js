@@ -25,6 +25,9 @@ const connectRabbitMQ = async () => {
 };
 
 const resolvers = {
+  Inventory: {
+    id: (parent) => parent._id.toString(),
+  },
   Query: {
     inventori: async (parent, args) => {
       const cacheKey = `inventori:${args.id}`;

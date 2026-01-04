@@ -20,7 +20,15 @@ type Query {
 
 type Mutation {
   buatPesanan(penggunaId: ID!, produk: [OrderItemInput!]!): Order!
+  updatePesanan(
+    id: ID!
+    penggunaId: ID
+    produk: [OrderItemInput]
+    total: Float
+    status: String
+  ): Order!
   updateStatusPesanan(id: ID!, status: String!): Order!
+  hapusPesanan(id: ID!): Boolean!
   batalkanPesanan(id: ID!): Boolean!
 }
 

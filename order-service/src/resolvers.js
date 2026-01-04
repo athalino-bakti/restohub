@@ -33,6 +33,9 @@ const connectRabbitMQ = async () => {
 };
 
 const resolvers = {
+  Order: {
+    id: (parent) => parent._id.toString(),
+  },
   Query: {
     pesanan: async (parent, args) => {
       const cacheKey = `pesanan:${args.id}`;

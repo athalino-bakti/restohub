@@ -60,6 +60,9 @@ const saveImage = async (upload) => {
 };
 
 const resolvers = {
+  Product: {
+    id: (parent) => parent._id.toString(),
+  },
   Query: {
     produk: async (parent, args) => {
       const cacheKey = `produk:${args.id}`;

@@ -1,5 +1,5 @@
-import React from "react";
-import { useQuery, gql } from "@apollo/client";
+import React, { useState } from "react";
+import { useQuery, useMutation, gql } from "@apollo/client";
 import {
   Table,
   TableBody,
@@ -12,6 +12,13 @@ import {
   Box,
   Alert,
   Chip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Button,
+  MenuItem,
 } from "@mui/material";
 import { Payment } from "@mui/icons-material";
 
@@ -28,8 +35,52 @@ const GET_PAYMENTS = gql`
   }
 `;
 
+const UPDATE_PAYMENT = gql`
+  mutation UpdatePayment(
+    $id: ID!
+    $pesananId: ID
+    $jumlah: Int
+    $status: String
+    $metode: String
+  ) {
+    updatePembayaran(
+      id: $id
+      pesananId: $pesananId
+      jumlah: $jumlah
+      status: $status
+      metode: $metode
+    ) {
+      id
+      pesananId
+      jumlah
+      status
+      metode
+      tanggalDibuat
+    }
+  }
+`;
+
+const DELETE_PAYMENT = gql`
+  mutation DeletePayment($id: ID!) {
+    hapusPembayaran(id: $id)
+  }
+`;
+
 const Payments = () => {
-  const { loading, error, data } = useQuery(GET_PAYMENTS);
+  const { loading, error, data, refetch } = useQuery(GET_PAYMENTS);
+  const [updatePayment] = useMutation(UPDATE_PAYMENT);
+  const [deletePayment] = useMutation(DELETE_PAYMENT);
+  const [editingPayment, setEditingPayment] = React.useState(null);
+  const [editForm, setEditForm] = useState({
+    pesananId: "",
+    jumlah: 0,
+    status: "",
+    metode: "",
+  });
+  const [deleteDialog, setDeleteDialog] = useState({
+    open: false,
+    payment: null,
+  });
 
   if (loading)
     return (
@@ -58,6 +109,51 @@ const Payments = () => {
         return "secondary";
       default:
         return "default";
+    }
+  };
+
+  const handleEdit = (payment) => {
+    setEditingPayment(payment.id);
+    setEditForm({
+      pesananId: payment.pesananId,
+      jumlah: payment.jumlah,
+      status: payment.status,
+      metode: payment.metode,
+    });
+  };
+
+  const handleSave = async () => {
+    try {
+      await updatePayment({
+        variables: {
+          id: editingPayment,
+          ...editForm,
+        },
+      });
+      setEditingPayment(null);
+      refetch();
+    } catch (error) {
+      console.error("Error updating payment:", error);
+    }
+  };
+
+  const handleCancel = () => {
+    setEditingPayment(null);
+  };
+
+  const handleDelete = (payment) => {
+    setDeleteDialog({ open: true, payment });
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await deletePayment({
+        variables: { id: deleteDialog.payment.id },
+      });
+      setDeleteDialog({ open: false, payment: null });
+      refetch();
+    } catch (error) {
+      console.error("Error deleting payment:", error);
     }
   };
 
@@ -124,6 +220,7 @@ const Payments = () => {
                 <TableCell>Method</TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell>Date</TableCell>
+                <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -183,12 +280,31 @@ const Payments = () => {
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2" color="text.secondary">
-                      {new Date(payment.tanggalDibuat).toLocaleDateString("id-ID", {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                      })}
+                      {new Date(payment.tanggalDibuat).toLocaleDateString(
+                        "id-ID",
+                        {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        }
+                      )}
                     </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      size="small"
+                      onClick={() => handleEdit(payment)}
+                      sx={{ mr: 1 }}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      size="small"
+                      color="error"
+                      onClick={() => handleDelete(payment)}
+                    >
+                      Delete
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -196,6 +312,87 @@ const Payments = () => {
           </Table>
         </TableContainer>
       )}
+
+      {/* Edit Dialog */}
+      <Dialog open={editingPayment !== null} onClose={handleCancel}>
+        <DialogTitle>Edit Payment</DialogTitle>
+        <DialogContent>
+          <TextField
+            label="Order ID"
+            value={editForm.pesananId}
+            onChange={(e) =>
+              setEditForm({ ...editForm, pesananId: e.target.value })
+            }
+            fullWidth
+            margin="normal"
+          />
+          <TextField
+            label="Amount"
+            type="number"
+            value={editForm.jumlah}
+            onChange={(e) =>
+              setEditForm({ ...editForm, jumlah: parseInt(e.target.value) })
+            }
+            fullWidth
+            margin="normal"
+          />
+          <TextField
+            label="Status"
+            select
+            value={editForm.status}
+            onChange={(e) =>
+              setEditForm({ ...editForm, status: e.target.value })
+            }
+            fullWidth
+            margin="normal"
+          >
+            <MenuItem value="pending">Pending</MenuItem>
+            <MenuItem value="processing">Processing</MenuItem>
+            <MenuItem value="completed">Completed</MenuItem>
+            <MenuItem value="failed">Failed</MenuItem>
+            <MenuItem value="refunded">Refunded</MenuItem>
+          </TextField>
+          <TextField
+            label="Method"
+            value={editForm.metode}
+            onChange={(e) =>
+              setEditForm({ ...editForm, metode: e.target.value })
+            }
+            fullWidth
+            margin="normal"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancel}>Cancel</Button>
+          <Button onClick={handleSave} variant="contained">
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Dialog */}
+      <Dialog
+        open={deleteDialog.open}
+        onClose={() => setDeleteDialog({ open: false, payment: null })}
+      >
+        <DialogTitle>Delete Payment</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete this payment? This action cannot be
+            undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setDeleteDialog({ open: false, payment: null })}
+          >
+            Cancel
+          </Button>
+          <Button onClick={confirmDelete} color="error" variant="contained">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

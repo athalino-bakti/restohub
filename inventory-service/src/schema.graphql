@@ -11,6 +11,7 @@ type Query {
 }
 
 type Mutation {
+  updateInventori(id: ID!, produkId: ID, stok: Int, lokasi: String): Inventory!
   updateStok(id: ID!, stok: Int!): Inventory!
   buatInventori(produkId: ID!, stok: Int!, lokasi: String): Inventory!
   hapusInventori(id: ID!): Boolean!

@@ -1,5 +1,5 @@
-import React from "react";
-import { useQuery, gql } from "@apollo/client";
+import React, { useState } from "react";
+import { useQuery, useMutation, gql } from "@apollo/client";
 import {
   Table,
   TableBody,
@@ -12,8 +12,16 @@ import {
   Box,
   Alert,
   Chip,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Button,
+  MenuItem,
 } from "@mui/material";
-import { ShoppingCart } from "@mui/icons-material";
+import { ShoppingCart, Edit, Delete, Save, Cancel } from "@mui/icons-material";
 
 const GET_ORDERS = gql`
   query GetOrders {
@@ -32,8 +40,54 @@ const GET_ORDERS = gql`
   }
 `;
 
+const UPDATE_ORDER = gql`
+  mutation UpdateOrder(
+    $id: ID!
+    $penggunaId: ID
+    $total: Int
+    $status: String
+  ) {
+    updatePesanan(
+      id: $id
+      penggunaId: $penggunaId
+      total: $total
+      status: $status
+    ) {
+      id
+      penggunaId
+      produk {
+        produkId
+        jumlah
+        harga
+      }
+      total
+      status
+      tanggalDibuat
+    }
+  }
+`;
+
+const DELETE_ORDER = gql`
+  mutation DeleteOrder($id: ID!) {
+    hapusPesanan(id: $id)
+  }
+`;
+
 const Orders = () => {
-  const { loading, error, data } = useQuery(GET_ORDERS);
+  const { loading, error, data, refetch } = useQuery(GET_ORDERS);
+  const [updateOrder] = useMutation(UPDATE_ORDER);
+  const [deleteOrder] = useMutation(DELETE_ORDER);
+  const [editingOrder, setEditingOrder] = useState(null);
+  const [editForm, setEditForm] = useState({
+    penggunaId: "",
+    produk: [],
+    total: 0,
+    status: "",
+  });
+  const [deleteDialog, setDeleteDialog] = useState({
+    open: false,
+    order: null,
+  });
 
   if (loading)
     return (
@@ -64,6 +118,51 @@ const Orders = () => {
         return "error";
       default:
         return "default";
+    }
+  };
+
+  const handleEdit = (order) => {
+    setEditingOrder(order.id);
+    setEditForm({
+      penggunaId: order.penggunaId,
+      produk: order.produk,
+      total: order.total,
+      status: order.status,
+    });
+  };
+
+  const handleSave = async () => {
+    try {
+      await updateOrder({
+        variables: {
+          id: editingOrder,
+          ...editForm,
+        },
+      });
+      setEditingOrder(null);
+      refetch();
+    } catch (error) {
+      console.error("Error updating order:", error);
+    }
+  };
+
+  const handleCancel = () => {
+    setEditingOrder(null);
+  };
+
+  const handleDelete = (order) => {
+    setDeleteDialog({ open: true, order });
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await deleteOrder({
+        variables: { id: deleteDialog.order.id },
+      });
+      setDeleteDialog({ open: false, order: null });
+      refetch();
+    } catch (error) {
+      console.error("Error deleting order:", error);
     }
   };
 
@@ -130,6 +229,7 @@ const Orders = () => {
                 <TableCell>Total</TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell>Date</TableCell>
+                <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -194,6 +294,22 @@ const Orders = () => {
                         }
                       )}
                     </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleEdit(order)}
+                      color="primary"
+                    >
+                      <Edit fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleDelete(order)}
+                      color="error"
+                    >
+                      <Delete fontSize="small" />
+                    </IconButton>
                   </TableCell>
                 </TableRow>
               ))}

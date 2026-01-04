@@ -15,5 +15,13 @@ type Query {
 
 type Mutation {
   prosesPembayaran(pesananId: ID!, jumlah: Float!, metode: String!): Pembayaran!
+  updatePembayaran(
+    id: ID!
+    pesananId: ID
+    jumlah: Float
+    metode: String
+    status: String
+  ): Pembayaran!
   updateStatusPembayaran(id: ID!, status: String!): Pembayaran!
+  hapusPembayaran(id: ID!): Boolean!
 }

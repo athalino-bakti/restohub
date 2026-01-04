@@ -28,6 +28,9 @@ const connectRabbitMQ = async () => {
 };
 
 const resolvers = {
+  Pembayaran: {
+    id: (parent) => parent._id.toString(),
+  },
   Query: {
     pembayaran: async (parent, args) => {
       const cacheKey = `pembayaran:${args.id}`;
@@ -103,6 +106,24 @@ const resolvers = {
         );
       }
       return payment;
+    },
+    hapusPembayaran: async (parent, args) => {
+      const payment = await Payment.findByIdAndDelete(args.id);
+      if (payment) {
+        await redisClient.del(`pembayaran:${args.id}`);
+        await redisClient.del(`daftarPembayaran:${payment.pesananId}`);
+        await redisClient.del("daftarPembayaran:all");
+        await rabbitChannel.sendToQueue(
+          "payment_events",
+          Buffer.from(
+            JSON.stringify({
+              event: "pembayaran_dihapus",
+              data: { id: args.id },
+            })
+          )
+        );
+      }
+      return !!payment;
     },
   },
 };

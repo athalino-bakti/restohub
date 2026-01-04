@@ -1,41 +1,12 @@
-- [ ] Implement product service
-- [ ] Implement order service
-- [ ] Implement payment service
-- [ ] Implement inventory service
-- [ ] Implement user service
-- [ ] Implement API gateway
-- [ ] Implement frontend
-- [ ] Set up Kubernetes deployment
-- [ ] # Set up Docker Compose
+# TODO: Add Admin Edit and Delete Capabilities
 
-# TODO
+## Steps to Complete
 
-- [x] Create dummy data for products
-- [x] Create dummy data for orders
-- [x] Create dummy data for payments
-- [x] Create dummy data for inventory
-- [ ] Implement product service
-- [ ] Implement order service
-- [ ] Implement payment service
-- [ ] Implement inventory service
-- [ ] Implement user service
-- [ ] Implement API gateway
-- [ ] Implement frontend
-- [ ] Set up Kubernetes deployment
-- [ ] Set up Docker Compose
-
-## Dummy Data Seeding
-
-Dummy data has been created and tested for all services. To seed the databases with dummy data:
-
-1. Ensure MongoDB, Redis, and RabbitMQ are running (use `docker-compose up -d mongodb redis rabbitmq`).
-2. Run the batch files in the root directory:
-
-   ```bash
-   .\seed_products.bat
-   .\seed_orders.bat
-   .\install_and_seed_payments.bat
-   .\install_and_seed_inventory.bat
-   ```
-
-   Or use Docker Compose to run the services and seed data.
+- [x] Update order-service/src/schema.graphql: Add updatePesanan and hapusPesanan mutations, and UpdateOrderInput.
+- [x] Update order-service/src/resolvers.js: Implement updatePesanan and hapusPesanan resolvers.
+- [x] Update payment-service/src/schema.graphql: Add updatePembayaran mutation and UpdatePembayaranInput.
+- [x] Update payment-service/src/resolvers.js: Implement updatePembayaran resolver.
+- [x] Update payment-service/src/resolvers.js: Implement updatePembayaran resolver.
+- [x] Update inventory-service/src/schema.graphql: Add updateInventori mutation and UpdateInventoryInput.
+- [x] Update inventory-service/src/resolvers.js: Implement updateInventori resolver.
+- [x] Test the services to ensure mutations work correctly.

@@ -28,9 +28,9 @@ const dummyPayments = [
 const seedPayments = async () => {
   try {
     await initConnections();
-    const Pembayaran = mongoose.model("Pembayaran");
-    await Pembayaran.deleteMany(); // Clear existing data
-    await Pembayaran.insertMany(dummyPayments);
+    const Payment = mongoose.model("Payment");
+    await Payment.deleteMany(); // Clear existing data
+    await Payment.insertMany(dummyPayments);
     console.log("Dummy payments inserted successfully");
     process.exit(0);
   } catch (error) {
