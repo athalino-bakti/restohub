@@ -15,6 +15,10 @@ import {
   Box,
   Alert,
   IconButton,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import { Add, Restaurant, Edit, Delete } from "@mui/icons-material";
 
@@ -426,17 +430,26 @@ const Products = () => {
               margin="normal"
               sx={{ mb: 2 }}
             />
-            <TextField
-              fullWidth
-              label="Category"
-              value={formData.kategori}
-              onChange={(e) =>
-                setFormData({ ...formData, kategori: e.target.value })
-              }
-              margin="normal"
-              placeholder="e.g., Food, Beverage, Dessert"
-              sx={{ mb: 2 }}
-            />
+            <FormControl fullWidth margin="normal" sx={{ mb: 2 }}>
+              <InputLabel>Category</InputLabel>
+              <Select
+                value={formData.kategori}
+                onChange={(e) =>
+                  setFormData({ ...formData, kategori: e.target.value })
+                }
+                label="Category"
+              >
+                <MenuItem value="">
+                  <em>None</em>
+                </MenuItem>
+                <MenuItem value="Food">Food</MenuItem>
+                <MenuItem value="Beverage">Beverage</MenuItem>
+                <MenuItem value="Dessert">Dessert</MenuItem>
+                <MenuItem value="Appetizer">Appetizer</MenuItem>
+                <MenuItem value="Main Course">Main Course</MenuItem>
+                <MenuItem value="Snack">Snack</MenuItem>
+              </Select>
+            </FormControl>
             <Button variant="outlined" component="label" sx={{ mb: 2 }}>
               Upload Image
               <input
