@@ -2,40 +2,60 @@ import React from "react";
 import { Routes, Route } from "react-router-dom";
 import { Container, Box } from "@mui/material";
 import Header from "./components/Header";
+import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
 import Orders from "./pages/Orders";
+import Cart from "./pages/Cart";
 import Payments from "./pages/Payments";
 import Inventory from "./pages/Inventory";
 import { AuthProvider } from "./context/AuthContext";
+import { CartProvider } from "./context/CartContext";
 
 function App() {
   return (
     <AuthProvider>
-      <Box
-        sx={{
-          flexGrow: 1,
-          minHeight: "100vh",
-          backgroundColor: "background.default",
-          backgroundImage:
-            "linear-gradient(to bottom, #f8fafc 0%, #ffffff 100%)",
-        }}
-      >
-        <Header />
-        <Container maxWidth="xl" sx={{ py: 4 }}>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/products" element={<Products />} />
-            <Route path="/orders" element={<Orders />} />
-            <Route path="/payments" element={<Payments />} />
-            <Route path="/inventory" element={<Inventory />} />
-          </Routes>
-        </Container>
-      </Box>
+      <CartProvider>
+        <Box
+          sx={{
+            flexGrow: 1,
+            minHeight: "100vh",
+            backgroundColor: "background.default",
+            backgroundImage:
+              "linear-gradient(to bottom, #f8fafc 0%, #ffffff 100%)",
+          }}
+        >
+          <Header />
+          <Container maxWidth="xl" sx={{ py: 4 }}>
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/products" element={<Products />} />
+              <Route path="/cart" element={<Cart />} />
+              <Route path="/orders" element={<Orders />} />
+              <Route
+                path="/payments"
+                element={
+                  <ProtectedRoute requireAdmin={true}>
+                    <Payments />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/inventory"
+                element={
+                  <ProtectedRoute requireAdmin={true}>
+                    <Inventory />
+                  </ProtectedRoute>
+                }
+              />
+            </Routes>
+          </Container>
+        </Box>
+      </CartProvider>
     </AuthProvider>
   );
 }

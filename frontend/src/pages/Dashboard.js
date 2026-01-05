@@ -31,7 +31,9 @@ const Dashboard = () => {
     return null;
   }
 
-  const cards = [
+  const isAdmin = user.role === "admin";
+
+  const allCards = [
     {
       title: "Products",
       icon: Restaurant,
@@ -65,6 +67,13 @@ const Dashboard = () => {
       gradient: "linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)",
     },
   ];
+
+  // Filter cards based on user role
+  const cards = isAdmin
+    ? allCards
+    : allCards.filter(
+        (card) => card.title === "Products" || card.title === "Orders"
+      );
 
   return (
     <Box>

@@ -142,36 +142,40 @@ const Header = () => {
             >
               Orders
             </Button>
-            <Button
-              onClick={() => navigate("/payments")}
-              sx={{
-                color:
-                  location.pathname === "/payments"
-                    ? "primary.main"
-                    : "text.secondary",
-                fontWeight: location.pathname === "/payments" ? 600 : 400,
-                "&:hover": {
-                  backgroundColor: "grey.50",
-                },
-              }}
-            >
-              Payments
-            </Button>
-            <Button
-              onClick={() => navigate("/inventory")}
-              sx={{
-                color:
-                  location.pathname === "/inventory"
-                    ? "primary.main"
-                    : "text.secondary",
-                fontWeight: location.pathname === "/inventory" ? 600 : 400,
-                "&:hover": {
-                  backgroundColor: "grey.50",
-                },
-              }}
-            >
-              Inventory
-            </Button>
+            {user.role === "admin" && (
+              <>
+                <Button
+                  onClick={() => navigate("/payments")}
+                  sx={{
+                    color:
+                      location.pathname === "/payments"
+                        ? "primary.main"
+                        : "text.secondary",
+                    fontWeight: location.pathname === "/payments" ? 600 : 400,
+                    "&:hover": {
+                      backgroundColor: "grey.50",
+                    },
+                  }}
+                >
+                  Payments
+                </Button>
+                <Button
+                  onClick={() => navigate("/inventory")}
+                  sx={{
+                    color:
+                      location.pathname === "/inventory"
+                        ? "primary.main"
+                        : "text.secondary",
+                    fontWeight: location.pathname === "/inventory" ? 600 : 400,
+                    "&:hover": {
+                      backgroundColor: "grey.50",
+                    },
+                  }}
+                >
+                  Inventory
+                </Button>
+              </>
+            )}
           </Box>
         )}
 
@@ -181,9 +185,10 @@ const Header = () => {
               label={user.role}
               size="small"
               sx={{
-                backgroundColor: "primary.light",
+                backgroundColor: user.role === "admin" ? "#6366f1" : "#3b82f6",
                 color: "white",
                 fontWeight: 500,
+                textTransform: "capitalize",
                 display: { xs: "none", sm: "flex" },
               }}
             />

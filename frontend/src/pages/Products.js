@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { useQuery, useMutation, gql } from "@apollo/client";
+import { useNavigate } from "react-router-dom";
 import {
   Grid,
   Card,
@@ -19,8 +20,18 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Badge,
+  Snackbar,
 } from "@mui/material";
-import { Add, Restaurant, Edit, Delete } from "@mui/icons-material";
+import {
+  Add,
+  Restaurant,
+  Edit,
+  Delete,
+  ShoppingCart,
+} from "@mui/icons-material";
+import { AuthContext } from "../context/AuthContext";
+import { CartContext } from "../context/CartContext";
 
 const GET_PRODUCTS = gql`
   query GetProducts {
@@ -93,6 +104,9 @@ const DELETE_PRODUCT = gql`
 `;
 
 const Products = () => {
+  const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
+  const { addToCart, getCartItemCount } = useContext(CartContext);
   const { loading, error, data, refetch } = useQuery(GET_PRODUCTS);
   const [createProduct] = useMutation(CREATE_PRODUCT);
   const [updateProduct] = useMutation(UPDATE_PRODUCT);
@@ -111,6 +125,9 @@ const Products = () => {
     gambar: null,
   });
   const [createError, setCreateError] = useState("");
+  const [snackbar, setSnackbar] = useState({ open: false, message: "" });
+
+  const isAdmin = user?.role === "admin";
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => {
@@ -152,6 +169,11 @@ const Products = () => {
     } catch (error) {
       console.error("Error deleting product:", error);
     }
+  };
+
+  const handleAddToCart = (product) => {
+    addToCart(product, 1);
+    setSnackbar({ open: true, message: `${product.nama} added to cart!` });
   };
 
   const handleSubmit = async (e) => {
@@ -217,22 +239,32 @@ const Products = () => {
             Products
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Manage your restaurant menu and products
+            {isAdmin
+              ? "Manage your restaurant menu and products"
+              : "Browse our menu and add items to your cart"}
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<Add />}
-          onClick={handleOpen}
-          sx={{
-            background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
-            "&:hover": {
-              background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
-            },
-          }}
-        >
-          Add Product
-        </Button>
+        {isAdmin ? (
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={handleOpen}
+            sx={{
+              background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
+              "&:hover": {
+                background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
+              },
+            }}
+          >
+            Add Product
+          </Button>
+        ) : (
+          <IconButton onClick={() => navigate("/cart")}>
+            <Badge badgeContent={getCartItemCount()} color="primary">
+              <ShoppingCart sx={{ fontSize: 32, color: "primary.main" }} />
+            </Badge>
+          </IconButton>
+        )}
       </Box>
 
       {data.daftarProduk.length === 0 ? (
@@ -335,20 +367,41 @@ const Products = () => {
                   </Box>
                 </CardContent>
                 <CardActions sx={{ p: 2, pt: 0 }}>
-                  <IconButton
-                    size="small"
-                    onClick={() => handleEdit(product)}
-                    color="primary"
-                  >
-                    <Edit fontSize="small" />
-                  </IconButton>
-                  <IconButton
-                    size="small"
-                    onClick={() => handleDelete(product)}
-                    color="error"
-                  >
-                    <Delete fontSize="small" />
-                  </IconButton>
+                  {isAdmin ? (
+                    <>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleEdit(product)}
+                        color="primary"
+                      >
+                        <Edit fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDelete(product)}
+                        color="error"
+                      >
+                        <Delete fontSize="small" />
+                      </IconButton>
+                    </>
+                  ) : (
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      startIcon={<ShoppingCart />}
+                      onClick={() => handleAddToCart(product)}
+                      sx={{
+                        background:
+                          "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
+                        "&:hover": {
+                          background:
+                            "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
+                        },
+                      }}
+                    >
+                      Add to Cart
+                    </Button>
+                  )}
                 </CardActions>
               </Card>
             </Grid>
@@ -525,6 +578,15 @@ const Products = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Snackbar for add to cart notification */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={2000}
+        onClose={() => setSnackbar({ open: false, message: "" })}
+        message={snackbar.message}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      />
     </Box>
   );
 };

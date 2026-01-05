@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { useQuery, useMutation, gql } from "@apollo/client";
 import {
   Table,
@@ -22,10 +22,28 @@ import {
   MenuItem,
 } from "@mui/material";
 import { ShoppingCart, Edit, Delete, Add } from "@mui/icons-material";
+import { AuthContext } from "../context/AuthContext";
 
 const GET_ORDERS = gql`
   query GetOrders {
     daftarPesanan {
+      id
+      penggunaId
+      produk {
+        produkId
+        jumlah
+        harga
+      }
+      total
+      status
+      tanggalDibuat
+    }
+  }
+`;
+
+const GET_USER_ORDERS = gql`
+  query GetUserOrders($penggunaId: ID) {
+    daftarPesanan(penggunaId: $penggunaId) {
       id
       penggunaId
       produk {
@@ -101,7 +119,17 @@ const DELETE_ORDER = gql`
 `;
 
 const Orders = () => {
-  const { loading, error, data, refetch } = useQuery(GET_ORDERS);
+  const { user } = useContext(AuthContext);
+  const isAdmin = user?.role === "admin";
+
+  // Admin sees all orders, users see only their orders
+  const { loading, error, data, refetch } = useQuery(
+    isAdmin ? GET_ORDERS : GET_USER_ORDERS,
+    {
+      variables: isAdmin ? {} : { penggunaId: user?.id },
+      skip: !user,
+    }
+  );
   const { data: productsData } = useQuery(GET_PRODUCTS);
   const { data: usersData } = useQuery(GET_USERS);
   const [updateOrder] = useMutation(UPDATE_ORDER);
@@ -290,22 +318,26 @@ const Orders = () => {
             Orders
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            View and manage all restaurant orders
+            {isAdmin
+              ? "View and manage all restaurant orders"
+              : "View your order history"}
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<Add />}
-          onClick={handleCreateOpen}
-          sx={{
-            background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
-            "&:hover": {
-              background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
-            },
-          }}
-        >
-          Create Order
-        </Button>
+        {isAdmin && (
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={handleCreateOpen}
+            sx={{
+              background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
+              "&:hover": {
+                background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
+              },
+            }}
+          >
+            Create Order
+          </Button>
+        )}
       </Box>
 
       {data.daftarPesanan.length === 0 ? (
@@ -360,7 +392,7 @@ const Orders = () => {
                 <TableCell>Total</TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell>Date</TableCell>
-                <TableCell>Actions</TableCell>
+                {isAdmin && <TableCell>Actions</TableCell>}
               </TableRow>
             </TableHead>
             <TableBody>
@@ -435,22 +467,24 @@ const Orders = () => {
                         : "-"}
                     </Typography>
                   </TableCell>
-                  <TableCell>
-                    <IconButton
-                      size="small"
-                      onClick={() => handleEdit(order)}
-                      color="primary"
-                    >
-                      <Edit fontSize="small" />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      onClick={() => handleDelete(order)}
-                      color="error"
-                    >
-                      <Delete fontSize="small" />
-                    </IconButton>
-                  </TableCell>
+                  {isAdmin && (
+                    <TableCell>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleEdit(order)}
+                        color="primary"
+                      >
+                        <Edit fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDelete(order)}
+                        color="error"
+                      >
+                        <Delete fontSize="small" />
+                      </IconButton>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>
