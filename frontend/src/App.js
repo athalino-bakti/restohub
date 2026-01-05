@@ -19,7 +19,8 @@ function App() {
           flexGrow: 1,
           minHeight: "100vh",
           backgroundColor: "background.default",
-          backgroundImage: "linear-gradient(to bottom, #f8fafc 0%, #ffffff 100%)",
+          backgroundImage:
+            "linear-gradient(to bottom, #f8fafc 0%, #ffffff 100%)",
         }}
       >
         <Header />

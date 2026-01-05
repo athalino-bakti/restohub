@@ -142,6 +142,36 @@ const Header = () => {
             >
               Orders
             </Button>
+            <Button
+              onClick={() => navigate("/payments")}
+              sx={{
+                color:
+                  location.pathname === "/payments"
+                    ? "primary.main"
+                    : "text.secondary",
+                fontWeight: location.pathname === "/payments" ? 600 : 400,
+                "&:hover": {
+                  backgroundColor: "grey.50",
+                },
+              }}
+            >
+              Payments
+            </Button>
+            <Button
+              onClick={() => navigate("/inventory")}
+              sx={{
+                color:
+                  location.pathname === "/inventory"
+                    ? "primary.main"
+                    : "text.secondary",
+                fontWeight: location.pathname === "/inventory" ? 600 : 400,
+                "&:hover": {
+                  backgroundColor: "grey.50",
+                },
+              }}
+            >
+              Inventory
+            </Button>
           </Box>
         )}
 
