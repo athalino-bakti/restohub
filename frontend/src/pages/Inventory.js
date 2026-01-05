@@ -67,6 +67,17 @@ const DELETE_INVENTORY = gql`
   }
 `;
 
+const CREATE_INVENTORY = gql`
+  mutation CreateInventory($produkId: ID!, $stok: Int!, $lokasi: String) {
+    buatInventori(produkId: $produkId, stok: $stok, lokasi: $lokasi) {
+      id
+      produkId
+      stok
+      lokasi
+    }
+  }
+`;
+
 const Inventory = () => {
   const { loading, error, data, refetch } = useQuery(GET_INVENTORY);
   const [updateInventory] = useMutation(UPDATE_INVENTORY);
@@ -76,8 +87,17 @@ const Inventory = () => {
     produkId: "",
     stok: 0,
     lokasi: "",
+    status: "",
   });
   const [deleteDialog, setDeleteDialog] = useState({ open: false, item: null });
+  const [addingInventory, setAddingInventory] = useState(false);
+  const [addForm, setAddForm] = useState({
+    produkId: "",
+    stok: 0,
+    lokasi: "",
+    status: "",
+  });
+  const [createInventory] = useMutation(CREATE_INVENTORY);
 
   if (loading)
     return (
@@ -100,10 +120,12 @@ const Inventory = () => {
 
   const handleEdit = (item) => {
     setEditingItem(item.id);
+    const status = getStockStatus(item.stok).label;
     setEditForm({
       produkId: item.produkId,
       stok: item.stok,
       lokasi: item.lokasi || "",
+      status: status,
     });
   };
 
@@ -112,7 +134,9 @@ const Inventory = () => {
       await updateInventory({
         variables: {
           id: editingItem,
-          ...editForm,
+          produkId: editForm.produkId,
+          stok: editForm.stok,
+          lokasi: editForm.lokasi,
         },
       });
       setEditingItem(null);
@@ -142,6 +166,23 @@ const Inventory = () => {
     }
   };
 
+  const handleAddSubmit = async () => {
+    try {
+      await createInventory({
+        variables: {
+          produkId: addForm.produkId,
+          stok: parseInt(addForm.stok) || 0,
+          lokasi: addForm.lokasi || null,
+        },
+      });
+      setAddingInventory(false);
+      setAddForm({ produkId: "", stok: 0, lokasi: "", status: "" });
+      refetch();
+    } catch (error) {
+      console.error("Error creating inventory:", error);
+    }
+  };
+
   return (
     <Box>
       <Box sx={{ mb: 4 }}>
@@ -151,6 +192,26 @@ const Inventory = () => {
         <Typography variant="body1" color="text.secondary">
           Monitor stock levels and manage inventory
         </Typography>
+        <Box sx={{ mb: 3, display: "flex", justifyContent: "flex-end" }}>
+          <Button
+            variant="contained"
+            onClick={() => setAddingInventory(true)}
+            sx={{
+              backgroundColor: "primary.main",
+              color: "white",
+              fontWeight: 600,
+              textTransform: "none",
+              px: 3,
+              py: 1,
+              borderRadius: 1,
+              "&:hover": {
+                backgroundColor: "primary.dark",
+              },
+            }}
+          >
+            + Add Inventory
+          </Button>
+        </Box>
       </Box>
 
       {data.daftarInventori && data.daftarInventori.length === 0 ? (
@@ -310,13 +371,35 @@ const Inventory = () => {
           />
           <TextField
             fullWidth
+            label="Status"
+            select
+            value={editForm.status}
+            onChange={(e) =>
+              setEditForm({ ...editForm, status: e.target.value })
+            }
+            margin="normal"
+          >
+            <MenuItem value="In Stock">In Stock</MenuItem>
+            <MenuItem value="Low Stock">Low Stock</MenuItem>
+            <MenuItem value="Out of Stock">Out of Stock</MenuItem>
+          </TextField>
+          <TextField
+            fullWidth
             label="Location"
+            select
             value={editForm.lokasi}
             onChange={(e) =>
               setEditForm({ ...editForm, lokasi: e.target.value })
             }
             margin="normal"
-          />
+          >
+            <MenuItem value="Gudang A">Gudang A</MenuItem>
+            <MenuItem value="Gudang B">Gudang B</MenuItem>
+            <MenuItem value="Gudang C">Gudang C</MenuItem>
+            <MenuItem value="Rak 1">Rak 1</MenuItem>
+            <MenuItem value="Rak 2">Rak 2</MenuItem>
+            <MenuItem value="Rak 3">Rak 3</MenuItem>
+          </TextField>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCancel} startIcon={<Cancel />}>
@@ -349,8 +432,82 @@ const Inventory = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Add Inventory Dialog */}
+      <Dialog
+        open={addingInventory}
+        onClose={() => setAddingInventory(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Add New Inventory Item</DialogTitle>
+        <DialogContent>
+          <TextField
+            fullWidth
+            label="Product ID"
+            value={addForm.produkId}
+            onChange={(e) =>
+              setAddForm({ ...addForm, produkId: e.target.value })
+            }
+            margin="normal"
+            placeholder="e.g., PROD001"
+          />
+          <TextField
+            fullWidth
+            label="Stock"
+            type="number"
+            value={addForm.stok}
+            onChange={(e) =>
+              setAddForm({ ...addForm, stok: parseInt(e.target.value) || 0 })
+            }
+            margin="normal"
+          />
+          <TextField
+            fullWidth
+            label="Status"
+            select
+            value={addForm.status}
+            onChange={(e) => setAddForm({ ...addForm, status: e.target.value })}
+            margin="normal"
+          >
+            <MenuItem value="In Stock">In Stock</MenuItem>
+            <MenuItem value="Low Stock">Low Stock</MenuItem>
+            <MenuItem value="Out of Stock">Out of Stock</MenuItem>
+          </TextField>
+          <TextField
+            fullWidth
+            label="Location"
+            select
+            value={addForm.lokasi}
+            onChange={(e) => setAddForm({ ...addForm, lokasi: e.target.value })}
+            margin="normal"
+          >
+            <MenuItem value="">Select Location</MenuItem>
+            <MenuItem value="Gudang A">Gudang A</MenuItem>
+            <MenuItem value="Gudang B">Gudang B</MenuItem>
+            <MenuItem value="Gudang C">Gudang C</MenuItem>
+            <MenuItem value="Rak 1">Rak 1</MenuItem>
+            <MenuItem value="Rak 2">Rak 2</MenuItem>
+            <MenuItem value="Rak 3">Rak 3</MenuItem>
+          </TextField>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setAddingInventory(false)}
+            startIcon={<Cancel />}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleAddSubmit}
+            variant="contained"
+            startIcon={<Save />}
+          >
+            Add
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
-
 export default Inventory;

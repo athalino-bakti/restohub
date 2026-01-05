@@ -53,6 +53,29 @@ const resolvers = {
     },
   },
   Mutation: {
+    updateInventori: async (parent, args) => {
+      const updateData = {};
+      if (args.produkId !== undefined) updateData.produkId = args.produkId;
+      if (args.stok !== undefined) updateData.stok = args.stok;
+      if (args.lokasi !== undefined) updateData.lokasi = args.lokasi;
+
+      const inventory = await Inventory.findByIdAndUpdate(args.id, updateData, {
+        new: true,
+      });
+      if (inventory) {
+        await redisClient.del(`inventori:${args.id}`);
+        await redisClient.del("daftarInventori");
+        if (rabbitChannel) {
+          await rabbitChannel.sendToQueue(
+            "inventory_events",
+            Buffer.from(
+              JSON.stringify({ event: "inventori_diupdate", data: inventory })
+            )
+          );
+        }
+      }
+      return inventory;
+    },
     updateStok: async (parent, args) => {
       const inventory = await Inventory.findByIdAndUpdate(
         args.id,
@@ -62,41 +85,51 @@ const resolvers = {
       if (inventory) {
         await redisClient.del(`inventori:${args.id}`);
         await redisClient.del("daftarInventori");
-        await rabbitChannel.sendToQueue(
-          "inventory_events",
-          Buffer.from(
-            JSON.stringify({ event: "stok_diupdate", data: inventory })
-          )
-        );
+        if (rabbitChannel) {
+          await rabbitChannel.sendToQueue(
+            "inventory_events",
+            Buffer.from(
+              JSON.stringify({ event: "stok_diupdate", data: inventory })
+            )
+          );
+        }
       }
       return inventory;
     },
     buatInventori: async (parent, args) => {
       const inventory = new Inventory(args);
       await inventory.save();
-      await redisClient.del("daftarInventori");
-      await rabbitChannel.sendToQueue(
-        "inventory_events",
-        Buffer.from(
-          JSON.stringify({ event: "inventori_dibuat", data: inventory })
-        )
-      );
+      if (redisClient) {
+        await redisClient.del("daftarInventori");
+      }
+      if (rabbitChannel) {
+        await rabbitChannel.sendToQueue(
+          "inventory_events",
+          Buffer.from(
+            JSON.stringify({ event: "inventori_dibuat", data: inventory })
+          )
+        );
+      }
       return inventory;
     },
     hapusInventori: async (parent, args) => {
       const inventory = await Inventory.findByIdAndDelete(args.id);
       if (inventory) {
-        await redisClient.del(`inventori:${args.id}`);
-        await redisClient.del("daftarInventori");
-        await rabbitChannel.sendToQueue(
-          "inventory_events",
-          Buffer.from(
-            JSON.stringify({
-              event: "inventori_dihapus",
-              data: { id: args.id },
-            })
-          )
-        );
+        if (redisClient) {
+          await redisClient.del(`inventori:${args.id}`);
+          await redisClient.del("daftarInventori");
+        }
+        if (rabbitChannel) {
+          await rabbitChannel.sendToQueue(
+            "inventory_events",
+            Buffer.from(
+              JSON.stringify({
+                event: "inventori_dihapus",
+                data: { id: args.id },
+              })
+            )
+          );
+        }
       }
       return !!inventory;
     },
