@@ -21,6 +21,7 @@ type Mutation {
     jumlah: Float
     metode: String
     status: String
+    tanggalDibuat: String
   ): Pembayaran!
   updateStatusPembayaran(id: ID!, status: String!): Pembayaran!
   hapusPembayaran(id: ID!): Boolean!

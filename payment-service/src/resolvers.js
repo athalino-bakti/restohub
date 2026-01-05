@@ -62,28 +62,42 @@ const resolvers = {
   },
   Mutation: {
     prosesPembayaran: async (parent, args) => {
-      let paymentIntent;
-      if (args.metode === "stripe") {
-        paymentIntent = await stripe.paymentIntents.create({
-          amount: Math.round(args.jumlah * 100),
-          currency: "usd",
+      try {
+        let paymentIntent;
+        if (args.metode === "stripe") {
+          paymentIntent = await stripe.paymentIntents.create({
+            amount: Math.round(args.jumlah * 100),
+            currency: "usd",
+          });
+        }
+        const payment = new Payment({
+          pesananId: args.pesananId,
+          jumlah: args.jumlah,
+          metode: args.metode,
+          status: "processing",
         });
+        await payment.save();
+        console.log("Payment saved:", payment);
+
+        if (redisClient) {
+          console.log("Clearing Redis cache...");
+          await redisClient.del("daftarPembayaran:all");
+          await redisClient.del(`daftarPembayaran:${args.pesananId}`);
+          await redisClient.del("daftarPembayaran");
+        }
+        if (rabbitChannel) {
+          await rabbitChannel.sendToQueue(
+            "payment_events",
+            Buffer.from(
+              JSON.stringify({ event: "pembayaran_diproses", data: payment })
+            )
+          );
+        }
+        return payment;
+      } catch (error) {
+        console.error("Error in prosesPembayaran:", error);
+        throw new Error(`Failed to process payment: ${error.message}`);
       }
-      const payment = new Payment({
-        pesananId: args.pesananId,
-        jumlah: args.jumlah,
-        metode: args.metode,
-        status: "processing",
-      });
-      await payment.save();
-      await redisClient.del("daftarPembayaran");
-      await rabbitChannel.sendToQueue(
-        "payment_events",
-        Buffer.from(
-          JSON.stringify({ event: "pembayaran_diproses", data: payment })
-        )
-      );
-      return payment;
     },
     updateStatusPembayaran: async (parent, args) => {
       const payment = await Payment.findByIdAndUpdate(
@@ -106,6 +120,61 @@ const resolvers = {
         );
       }
       return payment;
+    },
+    updatePembayaran: async (parent, args) => {
+      try {
+        const updateData = {};
+        if (args.pesananId !== undefined && args.pesananId !== "") {
+          updateData.pesananId = args.pesananId;
+        }
+        if (args.jumlah !== undefined && args.jumlah !== 0) {
+          updateData.jumlah = parseFloat(args.jumlah);
+        }
+        if (args.metode !== undefined && args.metode !== "") {
+          updateData.metode = args.metode;
+        }
+        if (args.status !== undefined && args.status !== "") {
+          updateData.status = args.status;
+        }
+        if (args.tanggalDibuat !== undefined && args.tanggalDibuat !== "") {
+          try {
+            const dateVal = new Date(args.tanggalDibuat);
+            if (!isNaN(dateVal.getTime())) {
+              updateData.tanggalDibuat = dateVal;
+            }
+          } catch (dateError) {
+            console.warn("Date parse error:", dateError);
+          }
+        }
+
+        console.log("Updating payment with data:", updateData);
+        const payment = await Payment.findByIdAndUpdate(args.id, updateData, {
+          new: true,
+        });
+
+        if (payment) {
+          if (redisClient) {
+            await redisClient.del(`pembayaran:${args.id}`);
+            await redisClient.del(`daftarPembayaran:${payment.pesananId}`);
+            await redisClient.del("daftarPembayaran:all");
+          }
+          if (rabbitChannel) {
+            await rabbitChannel.sendToQueue(
+              "payment_events",
+              Buffer.from(
+                JSON.stringify({
+                  event: "pembayaran_diupdate",
+                  data: payment,
+                })
+              )
+            );
+          }
+        }
+        return payment;
+      } catch (error) {
+        console.error("Error in updatePembayaran:", error);
+        throw new Error(`Failed to update payment: ${error.message}`);
+      }
     },
     hapusPembayaran: async (parent, args) => {
       const payment = await Payment.findByIdAndDelete(args.id);
