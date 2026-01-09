@@ -310,23 +310,23 @@ kubectl top nodes
 
 ```
 restohub/
-├── api-gateway/                 # Apollo Gateway untuk GraphQL Federation
+├── api-gateway/
 │   ├── src/server.js
-│   ├── k8s/                     # Kubernetes manifests
+│   ├── k8s/
 │   └── package.json
-├── frontend/                    # React application
+├── frontend/
 │   ├── src/
 │   │   ├── components/
 │   │   ├── context/
 │   │   ├── pages/
 │   │   └── App.js
 │   └── k8s/
-├── product-service/             # Product Microservice
-├── user-service/                # User Microservice
-├── order-service/               # Order Microservice
-├── payment-service/             # Payment Microservice
-├── inventory-service/           # Inventory Microservice
-├── k8s/                          # Shared Kubernetes configs
+├── product-service/
+├── user-service/
+├── order-service/
+├── payment-service/
+├── inventory-service/
+├── k8s/
 ├── docker-compose.yml
 ├── deploy-k8s.ps1
 ├── cleanup-k8s.ps1
@@ -351,21 +351,9 @@ restohub/
 - [x] React frontend dengan Material-UI
 - [x] MongoDB database per service
 
-### 🔄 In Development / Planned
-
-- [ ] Advanced caching strategies
-- [ ] Monitoring & logging (ELK stack)
-- [ ] Comprehensive API documentation
-- [ ] Performance optimization
-- [ ] Security hardening & rate limiting
-- [ ] Unit & integration tests
-- [ ] CI/CD pipeline
-- [ ] Service mesh (Istio)
-- [ ] Database replication
-
 ## 🚨 Troubleshooting
 
-### Services dapat't connect
+### Services tidak connect
 
 ```bash
 # Check pod status
