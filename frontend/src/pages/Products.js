@@ -33,6 +33,15 @@ import {
 } from "@mui/icons-material";
 import { AuthContext } from "../context/AuthContext";
 import { CartContext } from "../context/CartContext";
+import productClient from "../productClient";
+
+const getProductImageUrl = (gambar) => {
+  if (!gambar) return null;
+  if (gambar.startsWith("http://") || gambar.startsWith("https://")) {
+    return gambar;
+  }
+  return `http://localhost:4001${gambar}`;
+};
 
 const GET_PRODUCTS = gql`
   query GetProducts {
@@ -188,19 +197,40 @@ const Products = () => {
         deskripsi: formData.deskripsi,
         kategori: formData.kategori,
       };
-      if (formData.gambar) {
-        variables.gambar = formData.gambar;
-      }
+      const hasImage = !!formData.gambar;
 
       if (editingProduct) {
         variables.id = editingProduct;
-        await updateProduct({
-          variables,
-        });
+
+        // Jika ada gambar baru, kirim langsung ke product-service agar upload multipart tidak lewat gateway
+        if (hasImage) {
+          await productClient.mutate({
+            mutation: UPDATE_PRODUCT,
+            variables: {
+              ...variables,
+              gambar: formData.gambar,
+            },
+          });
+        } else {
+          await updateProduct({
+            variables,
+          });
+        }
       } else {
-        await createProduct({
-          variables,
-        });
+        // Create product: jika ada gambar, kirim langsung ke product-service
+        if (hasImage) {
+          await productClient.mutate({
+            mutation: CREATE_PRODUCT,
+            variables: {
+              ...variables,
+              gambar: formData.gambar,
+            },
+          });
+        } else {
+          await createProduct({
+            variables,
+          });
+        }
       }
       refetch();
       handleClose();
@@ -328,7 +358,7 @@ const Products = () => {
                   <CardMedia
                     component="img"
                     height="200"
-                    image={`http://localhost:4001${product.gambar}`}
+                    image={getProductImageUrl(product.gambar)}
                     alt={product.nama}
                     sx={{
                       objectFit: "cover",

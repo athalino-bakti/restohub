@@ -5,6 +5,7 @@ const { buildSubgraphSchema } = require("@apollo/subgraph");
 const { gql } = require("apollo-server-express");
 const fs = require("fs");
 const path = require("path");
+const { graphqlUploadExpress } = require("graphql-upload");
 const { resolvers, initConnections } = require("./resolvers");
 
 const typeDefsString = fs.readFileSync(
@@ -15,12 +16,18 @@ const typeDefs = gql(typeDefsString);
 
 const schema = buildSubgraphSchema([{ typeDefs, resolvers }]);
 
-const server = new ApolloServer({ schema });
+const server = new ApolloServer({
+  schema,
+  uploads: false, // handled by graphql-upload middleware
+});
 
 const app = express();
 
-// Serve uploaded images
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+// Middleware untuk menangani multipart/form-data upload file
+app.use(graphqlUploadExpress());
+
+// Serve uploaded images (stored in the parent "uploads" directory)
+app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
 
 // Health check endpoint
 app.get("/health", (req, res) => {

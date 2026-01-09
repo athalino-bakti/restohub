@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="300" fill="#FF6B6B"/>
+  <text x="200" y="140" font-size="24" font-family="Arial" fill="white" text-anchor="middle" font-weight="bold">
+    Nasi Goreng
+  </text>
+  <text x="200" y="170" font-size="16" font-family="Arial" fill="white" text-anchor="middle">
+    Restaurant Foto
+  </text>
+</svg>

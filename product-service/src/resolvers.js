@@ -3,6 +3,7 @@ const redis = require("redis");
 const amqp = require("amqplib");
 const fs = require("fs");
 const path = require("path");
+const { GraphQLUpload } = require("graphql-upload");
 
 const ProductSchema = new mongoose.Schema({
   nama: String,
@@ -60,6 +61,7 @@ const saveImage = async (upload) => {
 };
 
 const resolvers = {
+  Upload: GraphQLUpload,
   Product: {
     id: (parent) => parent._id.toString(),
   },
