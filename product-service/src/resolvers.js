@@ -121,7 +121,16 @@ const resolvers = {
       return product;
     },
     updateProduk: async (parent, args) => {
-      const product = await Product.findByIdAndUpdate(args.id, args, {
+      const updateData = { ...args };
+      delete updateData.gambar;
+      delete updateData.id;
+
+      if (args.gambar) {
+        const gambarPath = await saveImage(args.gambar);
+        updateData.gambar = gambarPath;
+      }
+
+      const product = await Product.findByIdAndUpdate(args.id, updateData, {
         new: true,
       });
       if (product) {

@@ -6,6 +6,7 @@ import {
   Card,
   CardContent,
   CardActions,
+  CardMedia,
   Typography,
   Button,
   Dialog,
@@ -41,6 +42,7 @@ const GET_PRODUCTS = gql`
       harga
       deskripsi
       kategori
+      gambar
     }
   }
 `;
@@ -322,6 +324,17 @@ const Products = () => {
                   },
                 }}
               >
+                {product.gambar && (
+                  <CardMedia
+                    component="img"
+                    height="200"
+                    image={`http://localhost:4001${product.gambar}`}
+                    alt={product.nama}
+                    sx={{
+                      objectFit: "cover",
+                    }}
+                  />
+                )}
                 <CardContent sx={{ flexGrow: 1, p: 3 }}>
                   <Typography
                     variant="h6"
