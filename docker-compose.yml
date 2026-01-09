@@ -75,6 +75,7 @@ services:
     depends_on:
       mongodb:
         condition: service_healthy
+    command: sh -c "node src/seed.js && npm start"
     healthcheck:
       test:
         [
@@ -136,6 +137,7 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+    command: sh -c "node src/seed.js && npm start"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4003/health"]
       interval: 10s
@@ -161,6 +163,7 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+    command: sh -c "node src/seed.js && npm start"
     healthcheck:
       test:
         [
@@ -193,6 +196,7 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+    command: sh -c "node src/seed.js && npm start"
     healthcheck:
       test:
         [
