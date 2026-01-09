@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-gateway-config
+data:
+  product-service-url: "http://product-service:4001/graphql"
+  user-service-url: "http://user-service:4002/graphql"
+  order-service-url: "http://order-service:4003/graphql"
+  payment-service-url: "http://payment-service:4004/graphql"
+  inventory-service-url: "http://inventory-service:4005/graphql"

@@ -12,6 +12,28 @@ spec:
       labels:
         app: inventory-service
     spec:
+      initContainers:
+        - name: seed-data
+          image: restohub/inventory-service:latest
+          command: ["node", "src/seed.js"]
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: MONGODB_URI
+              valueFrom:
+                secretKeyRef:
+                  name: inventory-service-secret
+                  key: mongodb-uri
+            - name: REDIS_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: inventory-service-config
+                  key: redis-url
+            - name: RABBITMQ_URL
+              valueFrom:
+                secretKeyRef:
+                  name: inventory-service-secret
+                  key: rabbitmq-url
       containers:
         - name: inventory-service
           image: restohub/inventory-service:latest
