@@ -287,11 +287,13 @@ Setiap service menggunakan environment variables berikut:
 ## 📊 Monitoring
 
 ### Local Development
+
 - RabbitMQ Management UI: http://localhost:15672 (user: admin, pass: admin)
 - MongoDB: mongodb://admin:password@localhost:27017
 - Redis CLI: `docker exec -it redis redis-cli`
 
 ### Kubernetes
+
 ```bash
 # Access Kubernetes Dashboard
 kubectl proxy
@@ -334,6 +336,7 @@ restohub/
 ## ✨ Features
 
 ### ✅ Implemented
+
 - [x] Microservices architecture dengan 5 services
 - [x] GraphQL API Federation via Apollo Gateway
 - [x] User authentication & authorization dengan JWT
@@ -349,6 +352,7 @@ restohub/
 - [x] MongoDB database per service
 
 ### 🔄 In Development / Planned
+
 - [ ] Advanced caching strategies
 - [ ] Monitoring & logging (ELK stack)
 - [ ] Comprehensive API documentation
@@ -362,6 +366,7 @@ restohub/
 ## 🚨 Troubleshooting
 
 ### Services dapat't connect
+
 ```bash
 # Check pod status
 kubectl get pods
@@ -374,6 +379,7 @@ kubectl describe pod pod-name
 ```
 
 ### Database connection issues
+
 ```bash
 # Verify MongoDB is running
 docker ps | grep mongodb
@@ -383,6 +389,7 @@ cd product-service && npm run seed
 ```
 
 ### Port conflicts (Windows)
+
 ```bash
 # Find process using port
 netstat -ano | findstr :4000
@@ -399,26 +406,3 @@ taskkill /PID <PID> /F
 - Caching dengan Redis
 - JWT untuk authentication
 - Environment-specific config di containers
-
-## 📄 License
-
-MIT License - Part of IAE (Integrated Application Environment) Semester 5 Project
-
-## 👥 Contributing
-
-Untuk kontribusi:
-1. Fork repository
-2. Create feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit changes (`git commit -m 'Add AmazingFeature'`)
-4. Push to branch (`git push origin feature/AmazingFeature`)
-5. Open Pull Request
-
-## 📞 Support
-
-Untuk bantuan atau pertanyaan, hubungi tim development atau buat issue di repository.
-
----
-
-**Last Updated**: January 2026
-**Status**: Active Development
-**Version**: 1.0.0
