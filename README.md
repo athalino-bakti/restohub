@@ -272,28 +272,153 @@ mutation {
 }
 ```
 
-## Environment Variables
+## 🔐 Environment Variables
 
-Each service uses the following environment variables:
+Setiap service menggunakan environment variables berikut:
 
-- `MONGODB_URI`: MongoDB connection string
-- `REDIS_URL`: Redis connection URL
-- `RABBITMQ_URL`: RabbitMQ connection URL
-- `PORT`: Service port
+- `MONGODB_URI` - MongoDB connection string
+- `REDIS_URL` - Redis connection URL
+- `RABBITMQ_URL` - RabbitMQ connection URL
+- `PORT` - Service port
+- `NODE_ENV` - Environment (development/production)
+- `JWT_SECRET` - JWT token secret
+- `API_GATEWAY_URL` - URL untuk API gateway
 
-## Monitoring
+## 📊 Monitoring
 
-- RabbitMQ Management UI: http://localhost:15672
-- Kubernetes Dashboard: `kubectl proxy` then http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/
+### Local Development
+- RabbitMQ Management UI: http://localhost:15672 (user: admin, pass: admin)
+- MongoDB: mongodb://admin:password@localhost:27017
+- Redis CLI: `docker exec -it redis redis-cli`
 
-## Contributing
+### Kubernetes
+```bash
+# Access Kubernetes Dashboard
+kubectl proxy
+# Then navigate to: http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/
 
-1. Fork the repository
-2. Create a feature branch
-3. Make changes
-4. Run tests
-5. Submit a pull request
+# View pod metrics
+kubectl top pods
 
-## License
+# View node metrics
+kubectl top nodes
+```
 
-MIT License
+## 🛠️ Project Structure
+
+```
+restohub/
+├── api-gateway/                 # Apollo Gateway untuk GraphQL Federation
+│   ├── src/server.js
+│   ├── k8s/                     # Kubernetes manifests
+│   └── package.json
+├── frontend/                    # React application
+│   ├── src/
+│   │   ├── components/
+│   │   ├── context/
+│   │   ├── pages/
+│   │   └── App.js
+│   └── k8s/
+├── product-service/             # Product Microservice
+├── user-service/                # User Microservice
+├── order-service/               # Order Microservice
+├── payment-service/             # Payment Microservice
+├── inventory-service/           # Inventory Microservice
+├── k8s/                          # Shared Kubernetes configs
+├── docker-compose.yml
+├── deploy-k8s.ps1
+├── cleanup-k8s.ps1
+└── README.md
+```
+
+## ✨ Features
+
+### ✅ Implemented
+- [x] Microservices architecture dengan 5 services
+- [x] GraphQL API Federation via Apollo Gateway
+- [x] User authentication & authorization dengan JWT
+- [x] Product management & catalog
+- [x] Order processing system
+- [x] Payment integration
+- [x] Inventory/stock management
+- [x] RabbitMQ async messaging
+- [x] Redis caching layer
+- [x] Docker containerization
+- [x] Kubernetes deployment
+- [x] React frontend dengan Material-UI
+- [x] MongoDB database per service
+
+### 🔄 In Development / Planned
+- [ ] Advanced caching strategies
+- [ ] Monitoring & logging (ELK stack)
+- [ ] Comprehensive API documentation
+- [ ] Performance optimization
+- [ ] Security hardening & rate limiting
+- [ ] Unit & integration tests
+- [ ] CI/CD pipeline
+- [ ] Service mesh (Istio)
+- [ ] Database replication
+
+## 🚨 Troubleshooting
+
+### Services dapat't connect
+```bash
+# Check pod status
+kubectl get pods
+
+# View logs
+kubectl logs -f deployment/product-service
+
+# Describe pod
+kubectl describe pod pod-name
+```
+
+### Database connection issues
+```bash
+# Verify MongoDB is running
+docker ps | grep mongodb
+
+# Seed database
+cd product-service && npm run seed
+```
+
+### Port conflicts (Windows)
+```bash
+# Find process using port
+netstat -ano | findstr :4000
+
+# Kill process
+taskkill /PID <PID> /F
+```
+
+## 📝 Notes
+
+- Setiap microservice memiliki MongoDB database terpisah
+- Inter-service communication via GraphQL Federation
+- Async communication via RabbitMQ
+- Caching dengan Redis
+- JWT untuk authentication
+- Environment-specific config di containers
+
+## 📄 License
+
+MIT License - Part of IAE (Integrated Application Environment) Semester 5 Project
+
+## 👥 Contributing
+
+Untuk kontribusi:
+1. Fork repository
+2. Create feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
+5. Open Pull Request
+
+## 📞 Support
+
+Untuk bantuan atau pertanyaan, hubungi tim development atau buat issue di repository.
+
+---
+
+**Last Updated**: January 2026
+**Status**: Active Development
+**Version**: 1.0.0
