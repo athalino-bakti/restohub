@@ -74,7 +74,7 @@ const resolvers = {
           pesananId: args.pesananId,
           jumlah: args.jumlah,
           metode: args.metode,
-          status: "processing",
+          status: "completed",
         });
         await payment.save();
         console.log("Payment saved:", payment);
@@ -86,6 +86,17 @@ const resolvers = {
           await redisClient.del("daftarPembayaran");
         }
         if (rabbitChannel) {
+          // Send event that payment is completed to update order status
+          await rabbitChannel.sendToQueue(
+            "payment_events",
+            Buffer.from(
+              JSON.stringify({
+                event: "pembayaran_selesai",
+                data: { pesananId: args.pesananId, status: "complete" },
+              })
+            )
+          );
+
           await rabbitChannel.sendToQueue(
             "payment_events",
             Buffer.from(
@@ -109,6 +120,20 @@ const resolvers = {
         await redisClient.del(`pembayaran:${args.id}`);
         await redisClient.del(`daftarPembayaran:${payment.pesananId}`);
         await redisClient.del("daftarPembayaran:all");
+
+        // Update order status to complete when payment is successful
+        if (args.status === "success" || args.status === "completed") {
+          await rabbitChannel.sendToQueue(
+            "payment_events",
+            Buffer.from(
+              JSON.stringify({
+                event: "pembayaran_selesai",
+                data: { pesananId: payment.pesananId, status: "complete" },
+              })
+            )
+          );
+        }
+
         await rabbitChannel.sendToQueue(
           "payment_events",
           Buffer.from(
@@ -158,6 +183,22 @@ const resolvers = {
             await redisClient.del(`daftarPembayaran:${payment.pesananId}`);
             await redisClient.del("daftarPembayaran:all");
           }
+
+          // Update order status to complete when payment is successful
+          if (args.status === "success" || args.status === "completed") {
+            if (rabbitChannel) {
+              await rabbitChannel.sendToQueue(
+                "payment_events",
+                Buffer.from(
+                  JSON.stringify({
+                    event: "pembayaran_selesai",
+                    data: { pesananId: payment.pesananId, status: "complete" },
+                  })
+                )
+              );
+            }
+          }
+
           if (rabbitChannel) {
             await rabbitChannel.sendToQueue(
               "payment_events",

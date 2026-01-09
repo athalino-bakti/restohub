@@ -30,6 +30,33 @@ const connectRabbitMQ = async () => {
   const connection = await amqp.connect(process.env.RABBITMQ_URL);
   rabbitChannel = await connection.createChannel();
   await rabbitChannel.assertQueue("order_events");
+  await rabbitChannel.assertQueue("payment_events");
+
+  // Listen for payment completion events
+  rabbitChannel.consume("payment_events", async (msg) => {
+    if (msg) {
+      const content = JSON.parse(msg.content.toString());
+      if (content.event === "pembayaran_selesai") {
+        const { pesananId, status } = content.data;
+        try {
+          const order = await Order.findByIdAndUpdate(
+            pesananId,
+            { status: status },
+            { new: true }
+          );
+          if (order && redisClient) {
+            await redisClient.del(`pesanan:${pesananId}`);
+            await redisClient.del(`daftarPesanan:${order.penggunaId}`);
+            await redisClient.del("daftarPesanan:all");
+          }
+          console.log(`Order ${pesananId} updated to ${status} after payment`);
+        } catch (error) {
+          console.error("Error updating order after payment:", error);
+        }
+      }
+      rabbitChannel.ack(msg);
+    }
+  });
 };
 
 const resolvers = {

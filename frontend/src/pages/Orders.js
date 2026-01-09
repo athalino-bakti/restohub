@@ -177,6 +177,8 @@ const Orders = () => {
         return "success";
       case "completed":
         return "success";
+      case "complete":
+        return "success";
       case "cancelled":
         return "error";
       default:
@@ -340,7 +342,7 @@ const Orders = () => {
         )}
       </Box>
 
-      {data.daftarPesanan.length === 0 ? (
+      {data?.daftarPesanan?.length === 0 ? (
         <Box
           sx={{
             textAlign: "center",
@@ -396,7 +398,7 @@ const Orders = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {data.daftarPesanan.map((order) => (
+              {data?.daftarPesanan?.map((order) => (
                 <TableRow
                   key={order.id}
                   sx={{
